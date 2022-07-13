@@ -1,7 +1,9 @@
-# Oscar 
-> Truffle's Deno Package Server  
+# Oscar
+
+> Truffle's Deno Package Server
 
 ## Roadmap
+
 - [ ] Serve Typescript in Deno environment
 - [ ] Serve compiled JavaScript in Node@18/Browser
 - [ ] [Import Maps](https://github.com/WICG/import-maps#the-basic-idea)
