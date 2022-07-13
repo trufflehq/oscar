@@ -1,0 +1,7 @@
+{
+	"imports": {
+		"$fuse/": "https://deno.land/x/fuse@v6.4.1/dist/",
+		"$std/": "https://deno.land/std@0.148.0/",
+		"$x/": "https://deno.land/x/"
+	}
+}

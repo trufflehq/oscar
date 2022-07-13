@@ -1,0 +1,18 @@
+{
+	"compileOnSave": true,
+	"compilerOptions": {
+		"alwaysStrict": true,
+		"allowJs": false,
+		"esModuleInterop": true,
+		"experimentalDecorators": true,
+		"inlineSourceMap": true,
+		"isolatedModules": true,
+		"forceConsistentCasingInFileNames": true,
+		"lib": ["deno.window"],
+		"module": "esnext",
+		"strict": true,
+		"noUnusedLocals": true,
+		"target": "esnext",
+		"useDefineForClassFields": true
+	}
+}
