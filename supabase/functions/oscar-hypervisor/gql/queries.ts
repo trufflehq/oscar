@@ -1,29 +1,29 @@
-import { gql } from '$x/graphql_request@v4.1.0/mod.ts';
+import { gql } from "$x/graphql_request@v4.1.0/mod.ts";
 
 type UUID = string;
 
 interface BaseGraphQLResponse {
-	extensions: Record<'components', unknown>;
+  extensions: Record<"components", unknown>;
 }
 
 export interface GetPackageQueryResponse extends BaseGraphQLResponse {
-	org: {
-		package: {
-			id: UUID;
-			name: string;
-			slug: string;
-			packageVersionConnection: {
-				nodes: {
-					id: UUID;
-					packageId: UUID;
-					semver: string;
-					moduleConnection: {
-						nodes: { filename: `/${string}`; code: string }[];
-					};
-				}[];
-			};
-		} | null;
-	} | null;
+  org: {
+    package: {
+      id: UUID;
+      name: string;
+      slug: string;
+      packageVersionConnection: {
+        nodes: {
+          id: UUID;
+          packageId: UUID;
+          semver: string;
+          moduleConnection: {
+            nodes: { filename: `/${string}`; code: string }[];
+          };
+        }[];
+      };
+    } | null;
+  } | null;
 }
 
 export const getPackageQuery = gql`
@@ -52,21 +52,21 @@ export const getPackageQuery = gql`
 `;
 
 export interface ListOrgPackagesQueryResponse extends BaseGraphQLResponse {
-	org: {
-		packageConnection: {
-			pageInfo: {
-				hasNextPage: boolean;
-			};
-			nodes: {
-				slug: string;
-				packageVersionConnection: {
-					nodes: {
-						semver: string;
-					}[];
-				};
-			}[];
-		};
-	} | null;
+  org: {
+    packageConnection: {
+      pageInfo: {
+        hasNextPage: boolean;
+      };
+      nodes: {
+        slug: string;
+        packageVersionConnection: {
+          nodes: {
+            semver: string;
+          }[];
+        };
+      }[];
+    };
+  } | null;
 }
 
 export const listOrgPackagesQuery = gql`

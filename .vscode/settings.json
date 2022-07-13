@@ -1,17 +1,19 @@
 {
-	"eslint.enable": false,
-	"deno.enable": true,
-	"deno.lint": true,
-	"deno.unstable": true,
-	"deno.suggest.imports.hosts": {
-		"https://deno.land": true,
-		"https://tfl.dev": true,
-		"https://npm.tfl.dev": true,
-		"https://fyko.ngrok.io": true
-	},
-	"deno.config": "./deno.json",
-	"[typescript]": {
-		"editor.defaultFormatter": "denoland.vscode-deno",
-		"editor.formatOnSave": true
-	}
+  "eslint.enable": false,
+  "deno.enable": true,
+  "deno.lint": true,
+  "deno.unstable": true,
+  "deno.suggest.imports.hosts": {
+    "https://deno.land": true,
+    "https://tfl.dev": true,
+    "https://npm.tfl.dev": true,
+    "https://fyko.ngrok.io": true
+  },
+  "deno.config": "./deno.json",
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true
+  },
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true
 }

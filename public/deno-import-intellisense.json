@@ -1,42 +1,41 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema#",
-	"$id": "https://deno.land/x/deno/cli/schemas/registry-completions.v2.json",
-	"version": 2,
-	"registries": [
-		{
-			"schema": "/@:scope/:module([a-z0-9_]+)@:version?/:path*",
-			"variables": [
-				{
-					"key": "module",
-					"documentation": "/i10e/details/${scope}/${module}",
-					"url": "/i10e/${scope}/${module}"
-				},
-				{
-					"key": "version",
-					"documentation": "/i10e/details/${scope}/${module}/${{version}}",
-					"url": "/i10e/${scope}/${module}/${{version}}"
-				},
-				{
-					"key": "path",
-					"documentation": "/i10e/details/${scope}/${module}/${{version}}/${path}",
-					"url": "/i10e/${scope}/${module}/${{version}}/${path}"
-				}
-			]
-		},
-		{
-			"schema": "/@:scope/:package([a-z0-9_]*)/:path*",
-			"variables": [
-				{
-					"key": "package",
-					"documentation": "/i10e/details/${scope}/${package}",
-					"url": "/i10e/${scope}/${package}"
-				},
-				{
-					"key": "path",
-					"documentation": "/i10e/details/${scope}/${package}/latest/${path}",
-					"url": "/i10e/${scope}/${package}/latest/${path}"
-				}
-			]
-		}
-	]
+  "$schema": "https://deno.land/x/deno/cli/schemas/registry-completions.v2.json",
+  "version": 2,
+  "registries": [
+    {
+      "schema": "/@:scope/:module([a-z0-9_]+)@:version?/:path*",
+      "variables": [
+        {
+          "key": "module",
+          "documentation": "/i10e/details/${scope}/${module}",
+          "url": "/i10e/${scope}/${module}"
+        },
+        {
+          "key": "version",
+          "documentation": "/i10e/details/${scope}/${module}/${{version}}",
+          "url": "/i10e/${scope}/${module}/${{version}}"
+        },
+        {
+          "key": "path",
+          "documentation": "/i10e/details/${scope}/${module}/${{version}}/${path}",
+          "url": "/i10e/${scope}/${module}/${{version}}/${path}"
+        }
+      ]
+    },
+    {
+      "schema": "/@:scope/:package([a-z0-9_]*)/:path*",
+      "variables": [
+        {
+          "key": "package",
+          "documentation": "/i10e/details/${scope}/${package}",
+          "url": "/i10e/${scope}/${package}"
+        },
+        {
+          "key": "path",
+          "documentation": "/i10e/details/${scope}/${package}/latest/${path}",
+          "url": "/i10e/${scope}/${package}/latest/${path}"
+        }
+      ]
+    }
+  ]
 }

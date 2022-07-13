@@ -1,13 +1,9 @@
 {
-	"$schema": "http://json-schema.org/draft-07/schema",
-	"importMap": "./import_map.json",
-	"fmt": {
-		"options": {
-			"useTabs": true,
-			"lineWidth": 120,
-			"indentWidth": 4,
-			"singleQuote": true,
-			"proseWrap": "preserve"
-		}
-	}
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "importMap": "./import_map.json",
+  "fmt": {
+    "options": {
+      "lineWidth": 120
+    }
+  }
 }
