@@ -8,7 +8,7 @@ import {
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 // @deno-types="$fuse/fuse.d.ts"
 import Fuse from "$fuse/fuse.esm.js";
-import { maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
+import { major, maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
 
 export class IntellisenseController extends Controller<"/"> {
   public constructor(app: OscarApplication) {
@@ -21,30 +21,25 @@ export class IntellisenseController extends Controller<"/"> {
       this.intellisense.bind(this),
     );
 
-    this.router.get(
-      "/i10e/@:scope",
-      this.scope.bind(this),
-    );
+    // this.router.get(
+    //   "/i10e/:scope",
+    //   this.scope.bind(this),
+    // );
 
     this.router.get(
-      "/i10e/@:scope/:package",
+      "/i10e/:scope/:package",
       this.scopePackage.bind(this),
     );
 
     this.router.get(
-      "/i10e/@:scope/:package/{:ver}?",
+      "/i10e/:scope/:package/{:ver}?{/}",
       this.scopePackageVer.bind(this),
     );
 
     this.router.get(
-      "/i10e/@:scope/:package/:ver/:path*{/}?",
+      "/i10e/:scope/:package/:ver/:path*",
       this.scopePackageVerPath.bind(this),
     );
-
-    // this.router.get(
-    //   "/i10e/details/@:scope/:package/:version?/:path*",
-    //   this.details.bind(this),
-    // );
   }
 
   public intellisense(
@@ -53,49 +48,42 @@ export class IntellisenseController extends Controller<"/"> {
     context.response.body = {
       version: 2,
       registries: [
-        // {
-        //   schema: "/@:scope",
-        //   variables: [{
-        //     key: "module",
-        //     documentation: "/i10e/details/${scope}",
-        //     url: "/i10e/${scope}",
-        //   }],
-        // },
-        // one with version specified
         {
-          schema: "/@:scope/:module([a-z0-9_]+)@:version?/:path*",
+          schema: "/@:scope/:module@:version/:path*",
           variables: [{
+            key: "scope",
+            url: "/i10e/${scope}",
+          }, {
             key: "module",
-            documentation: "/i10e/details/${scope}/${module}",
-            url: "/i10e/${scope}/${module}",
+            url: "/i10e/${scope}/${module}/",
           }, {
             key: "version",
-            documentation: "/i10e/details/${scope}/${module}/${{version}}",
-            url: "/i10e/${scope}/${module}/${{version}}",
+            url: "/i10e/${scope}/${module}/${{version}}/",
           }, {
             key: "path",
-            documentation: "/i10e/details/${scope}/${module}/${{version}}/${path}",
             url: "/i10e/${scope}/${module}/${{version}}/${path}",
           }],
         },
-        // one with no version specified
-        {
-          schema: "/@:scope/:package([a-z0-9_]*)/:path*",
-          variables: [{
-            key: "package",
-            documentation: "/i10e/details/${scope}/${package}",
-            url: "/i10e/${scope}/${package}",
-          }, {
-            key: "path",
-            documentation: "/i10e/details/${scope}/${package}/latest/${path}",
-            url: "/i10e/${scope}/${package}/latest/${path}",
-          }],
-        },
+        // {
+        //   schema: "/@:scope/:package([a-z0-9_]*)/:path*",
+        //   variables: [{
+        //     key: "scope",
+        //     url: "/i10e/${scope}",
+        //   }, {
+        //     key: "package",
+        //     // documentation: "/i10e/details/${scope}/${package}",
+        //     url: "/i10e/${scope}/${package}",
+        //   }, {
+        //     key: "path",
+        //     // documentation: "/i10e/details/${scope}/${package}/latest/${path}",
+        //     url: "/i10e/${scope}/${package}/latest/${path}",
+        //   }],
+        // },
       ],
     } as const;
 
     context.response.status = 200;
-    context.response.type = "application/json";
+    context.response.headers.append("Content-Type", "application/vnd.deno.reg.v2+json");
   }
 
   /**
@@ -103,16 +91,13 @@ export class IntellisenseController extends Controller<"/"> {
    * @param context
    */
   public async scope(
-    context: OscarContext<"/i10e/@:scope">,
+    context: OscarContext<"/i10e/:scope">,
   ): Promise<void> {
     const { params } = context;
-    const { scope, package: pkg, version, path } = params as {
+    const { scope } = params as {
       scope?: string;
-      package?: string;
-      version?: string;
-      path?: string;
     };
-    console.log({ scope, pkg, version, path });
+    console.log({ scope });
 
     // TODO: push back/do not impl
     // https://tfl.dev/@...
@@ -129,6 +114,16 @@ export class IntellisenseController extends Controller<"/"> {
       },
     );
 
+    if (!listOrgPackagesRes.org) {
+      context.response.status = 200;
+      context.response.type = "application/json";
+      context.response.body = {
+        items: [],
+        isIncomplete: true,
+      };
+      return;
+    }
+
     const body = {
       items: listOrgPackagesRes.org?.packageConnection.nodes.map((n) => n.slug),
       isIncomplete: listOrgPackagesRes.org?.packageConnection.pageInfo.hasNextPage,
@@ -143,9 +138,10 @@ export class IntellisenseController extends Controller<"/"> {
   }
 
   public async scopePackage(
-    context: OscarContext<"/i10e/@:scope/:package">,
+    context: OscarContext<"/i10e/:scope/:package">,
   ): Promise<void> {
     const { scope, package: pkg } = context.params;
+    console.log({ scope, pkg });
     const listOrgPackagesRes = await graphQLClient.request<
       ListOrgPackagesQueryResponse
     >(
@@ -162,23 +158,30 @@ export class IntellisenseController extends Controller<"/"> {
 
     // use fuzzy search to find the package
     const foundItems = fuse.search(pkg);
+    console.log(foundItems);
     const found: string[] = foundItems.map(({ item }: { item: string }) => item);
-    const items = found.slice(0, 100);
+    const items = found.slice(0, 100).map((x) => `${x}@`);
+    console.log(items);
     const body = {
       items,
       isIncomplete: found.length > items.length,
-      preselect: (foundItems[0].score === 0 ? foundItems[0].item : undefined),
+      preselect: foundItems.sort((a, b) => (a.score ?? 1) - (b.score ?? 1))[0].item ?? undefined,
     };
+    console.log(body);
     context.response.body = body;
     context.response.status = 200;
-    context.response.type = "application/json";
+    context.response.headers.append(
+      "Content-Type",
+      "application/json",
+    );
     return;
   }
 
   public async scopePackageVer(
-    context: OscarContext<"/i10e/@:scope/:package/{:ver}?">,
+    context: OscarContext<"/i10e/:scope/:package/{:ver}?{/}">,
   ): Promise<void> {
     const { scope, package: pkg, ver } = context.params;
+    console.log({ scope, pkg, ver });
     // fetchVersions
     const { org } = await graphQLClient.request<
       GetPackageQueryResponse
@@ -192,7 +195,9 @@ export class IntellisenseController extends Controller<"/"> {
 
     const versions = org!.package!.packageVersionConnection.nodes
       .map((n) => n.semver);
-    const items = ver ? versions.filter((v) => satisfies(v, ver)) : versions;
+    const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
+      major(x) >= 1 ? `^${x}` : `~${x}`
+    );
 
     const latest = maxSatisfying(versions, "*");
     context.response.body = {
@@ -206,8 +211,9 @@ export class IntellisenseController extends Controller<"/"> {
 
   // TODO: make this less shit
   public async scopePackageVerPath(
-    context: OscarContext<"/i10e/@:scope/:package/:ver/:path*{/}?">,
+    context: OscarContext<"/i10e/:scope/:package/:ver/:path*">,
   ): Promise<void> {
+    console.log("foo bar");
     const { scope, package: pkg, ver } = context.params;
     // fetchVersions
     const { org } = await graphQLClient.request<
@@ -222,10 +228,11 @@ export class IntellisenseController extends Controller<"/"> {
     const versions = org!.package!.packageVersionConnection.nodes
       .map((n) => n.semver);
 
-    const version = ver === "latest" ? maxSatisfying(versions, "*") ?? ver : ver;
+    const version = maxSatisfying(versions, ver ?? "*");
+    console.log({ version });
 
     const items = org!.package!.packageVersionConnection.nodes.find((n) => n.semver === version)?.moduleConnection
-      .nodes!.map((n) => n.filename);
+      .nodes!.map((n) => n.filename.replace("/", ""));
     console.dir(items);
 
     // const parsed = files!.map((f) => parse(f));

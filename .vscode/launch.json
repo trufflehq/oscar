@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "request": "launch",
+      "type": "node",
+      "name": "Launch Oscar",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/supabase/functions/oscar-hypervisor/index.ts",
+      "runtimeExecutable": "deno",
+      "runtimeArgs": [
+        "run",
+        "--unstable",
+        "--inspect-brk=127.0.0.1:9229",
+        "--allow-all"
+      ],
+      "attachSimplePort": 9229
+    }
+  ]
+}
