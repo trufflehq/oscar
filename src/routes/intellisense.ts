@@ -21,23 +21,23 @@ export class IntellisenseController extends Controller<"/"> {
       this.intellisense.bind(this),
     );
 
-    // this.router.get(
-    //   "/i10e/:scope",
-    //   this.scope.bind(this),
-    // );
+    this.router.get(
+      "/i10e/:scope",
+      this.scope.bind(this),
+    );
 
     this.router.get(
-      "/i10e/:scope/:package",
+      "/i10e/:scope/{:package}?",
       this.scopePackage.bind(this),
     );
 
     this.router.get(
-      "/i10e/:scope/:package/{:ver}?{/}",
+      "/i10e/:scope/:package/{:ver}?",
       this.scopePackageVer.bind(this),
     );
 
     this.router.get(
-      "/i10e/:scope/:package/:ver/:path*",
+      "/i10e/:scope/:package/:ver/:path*{/}?",
       this.scopePackageVerPath.bind(this),
     );
   }
@@ -49,36 +49,21 @@ export class IntellisenseController extends Controller<"/"> {
       version: 2,
       registries: [
         {
-          schema: "/@:scope/:module@:version/:path*",
+          schema: "/@:scope/:module@:version?/:path*",
           variables: [{
             key: "scope",
             url: "/i10e/${scope}",
           }, {
             key: "module",
-            url: "/i10e/${scope}/${module}/",
+            url: "/i10e/${scope}/${module}",
           }, {
             key: "version",
-            url: "/i10e/${scope}/${module}/${{version}}/",
+            url: "/i10e/${scope}/${module}/${{version}}",
           }, {
             key: "path",
             url: "/i10e/${scope}/${module}/${{version}}/${path}",
           }],
         },
-        // {
-        //   schema: "/@:scope/:package([a-z0-9_]*)/:path*",
-        //   variables: [{
-        //     key: "scope",
-        //     url: "/i10e/${scope}",
-        //   }, {
-        //     key: "package",
-        //     // documentation: "/i10e/details/${scope}/${package}",
-        //     url: "/i10e/${scope}/${package}",
-        //   }, {
-        //     key: "path",
-        //     // documentation: "/i10e/details/${scope}/${package}/latest/${path}",
-        //     url: "/i10e/${scope}/${package}/latest/${path}",
-        //   }],
-        // },
       ],
     } as const;
 
@@ -138,7 +123,7 @@ export class IntellisenseController extends Controller<"/"> {
   }
 
   public async scopePackage(
-    context: OscarContext<"/i10e/:scope/:package">,
+    context: OscarContext<"/i10e/:scope/{:package}?">,
   ): Promise<void> {
     const { scope, package: pkg } = context.params;
     console.log({ scope, pkg });
@@ -157,7 +142,7 @@ export class IntellisenseController extends Controller<"/"> {
     );
 
     // use fuzzy search to find the package
-    const foundItems = fuse.search(pkg);
+    const foundItems = fuse.search(pkg!);
     console.log(foundItems);
     const found: string[] = foundItems.map(({ item }: { item: string }) => item);
     const items = found.slice(0, 100).map((x) => `${x}@`);
@@ -178,7 +163,7 @@ export class IntellisenseController extends Controller<"/"> {
   }
 
   public async scopePackageVer(
-    context: OscarContext<"/i10e/:scope/:package/{:ver}?{/}">,
+    context: OscarContext<"/i10e/:scope/:package/{:ver}?">,
   ): Promise<void> {
     const { scope, package: pkg, ver } = context.params;
     console.log({ scope, pkg, ver });
@@ -195,9 +180,11 @@ export class IntellisenseController extends Controller<"/"> {
 
     const versions = org!.package!.packageVersionConnection.nodes
       .map((n) => n.semver);
+    console.dir(versions);
     const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
       major(x) >= 1 ? `^${x}` : `~${x}`
     );
+    console.log(items);
 
     const latest = maxSatisfying(versions, "*");
     context.response.body = {
@@ -211,7 +198,7 @@ export class IntellisenseController extends Controller<"/"> {
 
   // TODO: make this less shit
   public async scopePackageVerPath(
-    context: OscarContext<"/i10e/:scope/:package/:ver/:path*">,
+    context: OscarContext<"/i10e/:scope/:package/:ver/:path*{/}?">,
   ): Promise<void> {
     console.log("foo bar");
     const { scope, package: pkg, ver } = context.params;
@@ -234,15 +221,6 @@ export class IntellisenseController extends Controller<"/"> {
     const items = org!.package!.packageVersionConnection.nodes.find((n) => n.semver === version)?.moduleConnection
       .nodes!.map((n) => n.filename.replace("/", ""));
     console.dir(items);
-
-    // const parsed = files!.map((f) => parse(f));
-    // const highLevel = parsed.filter((p) => p.dir === "/").map((x) =>
-    //   `${x.dir}${x.name}`
-    // );
-    // const dirs = parsed.filter((p) => p.dir !== "/").map((e) =>
-    //   e.dir.split("/")[1]
-    // ).filter((dir, index, arr) => arr.indexOf(dir) === index); // filter to remove duplicates
-    // console.log({ highLevel, dirs });
 
     context.response.status = 200;
     context.response.type = "application/json";

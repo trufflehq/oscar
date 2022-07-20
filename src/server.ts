@@ -2,7 +2,7 @@ import { RootController } from "./routes/index.ts";
 import { IntellisenseController } from "./routes/intellisense.ts";
 import { OscarApplication } from "./structures/Application.ts";
 
-class X extends OscarApplication {
+export class Oscar extends OscarApplication {
   public init(): void {
     this.app.use(async (context, next) => {
       const start = performance.now();
@@ -18,5 +18,3 @@ class X extends OscarApplication {
     }
   }
 }
-
-await new X().start();

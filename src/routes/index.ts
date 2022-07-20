@@ -1,5 +1,5 @@
 import { parse } from "$std/path/mod.ts";
-import { maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
+import { clean, maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
 import { getPackageQuery, GetPackageQueryResponse, graphQLClient } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { craftFileURL, uploadFile } from "../util/bucket.ts";
@@ -14,6 +14,12 @@ export class RootController extends Controller<"/"> {
 
   public init(): void {
     this.router.get("/:scope/:pkg/:path*", this.handleImport.bind(this));
+
+    this.router.get("/", (ctx) => {
+      ctx.response.body = "Are you lost?";
+      ctx.response.status = 418;
+      ctx.response.type = "text/plain";
+    });
   }
 
   public async handleImport(
@@ -67,11 +73,20 @@ export class RootController extends Controller<"/"> {
       );
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
+    console.log({ semver, version });
+    // redirect to the exact version
+    // after calculating through semver
+    if (clean(semver!) !== semver) {
+      return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}`);
+    }
+
     const fileURL = craftFileURL(
       scope,
       `${parsedPackage}@${version}`,
       path,
     );
+
+    console.log({ fileURL });
 
     if (request.url.searchParams.has("debug")) {
       const latest = maxSatisfying(versions.map((v) => v.version), "*");
@@ -94,50 +109,58 @@ export class RootController extends Controller<"/"> {
     }
 
     if (request.headers.get("User-Agent")?.toLowerCase().includes("deno")) {
-      response.status = 302;
-      response.headers.set("Location", fileURL);
+      response.status = 200;
+      response.body = await fetch(fileURL).then((r) => r.arrayBuffer());
+      response.headers.append("Content-Type", "text/typescript");
+      // response.status = 302;
+      // response.headers.set("Location", fileURL);
       return;
     }
 
     // Node.js doesnt pass through a header
     // https://github.com/nodejs/node/pull/43852
-    if (!request.headers.get("User-Agent")) {
-      const cacheURL = craftFileURL(
-        scope,
-        `${parsedPackage}@${version}`,
-        `.cache/${parse(path).name}.js`,
-      );
-      console.log("searching for ", cacheURL);
-      // checking if the cached file exists
-      const exists = await fetch(cacheURL, { method: "HEAD" });
-      if (exists.status === 200) {
-        console.log("within 200");
-        // return the cached file if it exists
-        response.status = 302;
-        response.headers.set("Location", cacheURL);
-        return;
-      }
-
-      // generate .js file
-      const content = await fetch(fileURL);
-      const built = buildJavascript(await content.text());
-      console.log(built);
-
-      console.log("uploading...");
-      const uploaded = await uploadFile(scope, `${parsedPackage}@${version}`, `.cache/${parse(path).name}.js`, built);
-      console.dir(uploaded);
-      console.dir(await uploaded.text());
-
-      // serve the file
+    // if (!request.headers.get("User-Agent")) {
+    const cacheURL = craftFileURL(
+      scope,
+      `${parsedPackage}@${version}`,
+      `.cache/${parse(path).name}.js`,
+    );
+    console.log("searching for ", cacheURL);
+    // checking if the cached file exists
+    const exists = await fetch(cacheURL, { method: "HEAD" });
+    if (exists.status === 200) {
+      console.log("within 200");
+      // return the cached file if it exists
       response.status = 200;
-      response.type = "text/javascript";
-      response.body = built;
+      response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
+      response.headers.append("Content-Type", "text/javascript");
       return;
     }
 
-    // status code for not implemented
-    response.status = 501;
-    response.body = "Not implemented";
+    // generate .js file
+    const content = await fetch(fileURL);
+    const built = buildJavascript(await content.text());
+    console.log(built);
+
+    console.log("uploading...");
+    const uploaded = await uploadFile(scope, `${parsedPackage}@${version}`, `.cache/${parse(path).name}.js`, built);
+    console.dir(uploaded);
+    console.dir(await uploaded.text());
+
+    // serve the file
+    response.status = 200;
+    response.type = "text/javascript";
+    response.body = built;
     return;
+    // }
+
+    // response.status = 302;
+    // response.headers.set("Location", fileURL);
+    // return;
+
+    // status code for not implemented
+    // response.status = 501;
+    // response.body = "Not implemented";
+    // return;
   }
 }

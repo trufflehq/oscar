@@ -11,15 +11,17 @@ export class OscarApplication extends Application {
 
     this.app.use(logger.logger);
 
-    this.app.addEventListener("listen", ({ hostname, port, secure }) => {
-      const log_string = `[${format(new Date(Date.now()), "MM-dd-yyyy hh:mm:ss.SSS")}  Oak::logger] Listening on: ${
-        secure ? "https://" : "http://"
-      }${
-        hostname ??
-          "localhost"
-      }:${port}`;
-      console.log(bold(bgGreen(log_string)));
-    });
+    if (Deno.env.get("DENO_ENV") !== "testing") {
+      this.app.addEventListener("listen", ({ hostname, port, secure }) => {
+        const log_string = `[${format(new Date(Date.now()), "MM-dd-yyyy hh:mm:ss.SSS")}  Oak::logger] Listening on: ${
+          secure ? "https://" : "http://"
+        }${
+          hostname ??
+            "localhost"
+        }:${port}`;
+        console.log(bold(bgGreen(log_string)));
+      });
+    }
 
     this.init();
   }
