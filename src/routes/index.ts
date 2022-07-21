@@ -154,6 +154,7 @@ export class RootController extends Controller<"/"> {
       console.log("within 200");
       // return the cached file if it exists
       response.status = 200;
+      response.headers.append("Content-Type", "text/javascript");
       response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
       return;
     }
@@ -171,6 +172,7 @@ export class RootController extends Controller<"/"> {
 
     response.status = 200;
     response.body = built;
+    response.headers.append("Content-Type", "text/javascript");
     return;
   }
 }
