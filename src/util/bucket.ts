@@ -16,7 +16,7 @@ export interface GooglePrivateKey {
 const privateKey = Deno.env.get("GOOGLE_PRIVATE_KEY_JSON")!;
 const parsedKey: GooglePrivateKey = JSON.parse(privateKey);
 
-const auth = new GoogleAuth({
+export const auth = new GoogleAuth({
   scope: ["https://www.googleapis.com/auth/cloud-platform"],
   email: parsedKey.client_email,
   key: parsedKey.private_key,
