@@ -4,6 +4,7 @@ import { getPackageQuery, GetPackageQueryResponse, graphQLClient } from "../gql/
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/esbuild.ts";
+import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 
 const packageRegex = /(?<package>[^@]+)(?:@(?<semver>(?:[~|^|>|>=|<|<=])?[0-9.|x]+|latest))?/;
 
@@ -20,6 +21,12 @@ export class RootController extends Controller<"/"> {
       ctx.response.status = 418;
       ctx.response.type = "text/plain";
     });
+  }
+
+  public headers(response: OakResponse) {
+    response.headers.set("Access-Control-Allow-Origin", "*");
+    response.headers.set("Access-Control-Allow-Headers", "*");
+    return true;
   }
 
   public async handleImport(
@@ -45,6 +52,7 @@ export class RootController extends Controller<"/"> {
       response.body = "Invalid package name";
       return;
     }
+    this.headers(response);
 
     const { package: parsedPackage, semver } = exec
       .groups! as Record<

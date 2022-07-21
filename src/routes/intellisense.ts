@@ -9,6 +9,8 @@ import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts
 // @deno-types="$fuse/fuse.d.ts"
 import Fuse from "$fuse/fuse.esm.js";
 import { major, maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
+import * as log from "../util/logger.ts";
+const logger = log.getLogger("isense");
 
 export class IntellisenseController extends Controller<"/"> {
   public constructor(app: OscarApplication) {
@@ -82,7 +84,7 @@ export class IntellisenseController extends Controller<"/"> {
     const { scope } = params as {
       scope?: string;
     };
-    console.log({ scope });
+    logger.debug({ scope });
 
     // TODO: push back/do not impl
     // https://tfl.dev/@...
@@ -126,7 +128,7 @@ export class IntellisenseController extends Controller<"/"> {
     context: OscarContext<"/i10e/:scope/{:package}?">,
   ): Promise<void> {
     const { scope, package: pkg } = context.params;
-    console.log({ scope, pkg });
+    logger.info({ scope, pkg });
     const listOrgPackagesRes = await graphQLClient.request<
       ListOrgPackagesQueryResponse
     >(
@@ -143,16 +145,15 @@ export class IntellisenseController extends Controller<"/"> {
 
     // use fuzzy search to find the package
     const foundItems = fuse.search(pkg!);
-    console.log(foundItems);
+    logger.debug(foundItems);
     const found: string[] = foundItems.map(({ item }: { item: string }) => item);
     const items = found.slice(0, 100).map((x) => `${x}@`);
-    console.log(items);
+    logger.debug(items);
     const body = {
       items,
       isIncomplete: found.length > items.length,
       preselect: foundItems.sort((a, b) => (a.score ?? 1) - (b.score ?? 1))[0].item ?? undefined,
     };
-    console.log(body);
     context.response.body = body;
     context.response.status = 200;
     context.response.headers.append(
@@ -166,7 +167,7 @@ export class IntellisenseController extends Controller<"/"> {
     context: OscarContext<"/i10e/:scope/:package/{:ver}?">,
   ): Promise<void> {
     const { scope, package: pkg, ver } = context.params;
-    console.log({ scope, pkg, ver });
+    logger.debug({ scope, pkg, ver });
     // fetchVersions
     const { org } = await graphQLClient.request<
       GetPackageQueryResponse
@@ -180,11 +181,11 @@ export class IntellisenseController extends Controller<"/"> {
 
     const versions = org!.package!.packageVersionConnection.nodes
       .map((n) => n.semver);
-    console.dir(versions);
+    logger.debug(versions);
     const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
       major(x) >= 1 ? `^${x}` : `~${x}`
     );
-    console.log(items);
+    logger.debug(items);
 
     const latest = maxSatisfying(versions, "*");
     context.response.body = {
@@ -216,11 +217,11 @@ export class IntellisenseController extends Controller<"/"> {
       .map((n) => n.semver);
 
     const version = maxSatisfying(versions, ver ?? "*");
-    console.log({ version });
+    logger.debug({ version });
 
     const items = org!.package!.packageVersionConnection.nodes.find((n) => n.semver === version)?.moduleConnection
       .nodes!.map((n) => n.filename.replace("/", ""));
-    console.dir(items);
+    logger.debug(items);
 
     context.response.status = 200;
     context.response.type = "application/json";
