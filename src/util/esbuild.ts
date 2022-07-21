@@ -8,6 +8,8 @@ export function buildJavascript(contents: string /*sourcefile: string*/) {
       target: "es2020",
       parser: {
         syntax: "typescript",
+        tsx: true,
+        decorators: true,
       },
     },
   });
