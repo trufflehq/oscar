@@ -141,18 +141,18 @@ export class RootController extends Controller<"/"> {
     const cacheURL = craftFileURL(
       scope,
       `${parsedPackage}@${version}`,
-      `.cache/${parsedPath.name}${parsedPath.ext}`,
+      `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
     );
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
     // checking if the cached file exists
-    // const exists = await fetch(cacheURL, { method: "HEAD" });
-    // if (exists.status === 200) {
-    //   logger.debug("within 200");
-    //   response.status = 200;
-    //   response.headers.append("Content-Type", "text/javascript");
-    //   response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
-    //   return;
-    // }
+    const exists = await fetch(cacheURL, { method: "HEAD" });
+    if (exists.status === 200) {
+      logger.debug("within 200");
+      response.status = 200;
+      response.headers.append("Content-Type", "text/javascript");
+      response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
+      return;
+    }
 
     // generate .js file
     const content = await fetch(fileURL);
@@ -161,7 +161,7 @@ export class RootController extends Controller<"/"> {
     await uploadFile(
       scope,
       `${parsedPackage}@${version}`,
-      `.cache/${parsedPath.name}${parsedPath.ext}`,
+      `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
       built,
     );
 
