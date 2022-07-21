@@ -26,6 +26,7 @@ export class RootController extends Controller<"/"> {
   public headers(response: OakResponse) {
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set("Access-Control-Allow-Headers", "*");
+    response.headers.set("Cache-Control", "max-age=14400");
     return true;
   }
 
