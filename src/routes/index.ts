@@ -123,7 +123,7 @@ export class RootController extends Controller<"/"> {
     // https://github.com/nodejs/node/pull/43852
 
     const parsedPath = parse(path);
-    if (![".ts", ".js"].includes(parsedPath.ext)) {
+    if (![".ts", ".tsx", ".js", ".jsx"].includes(parsedPath.ext)) {
       logger.debug("Serving non-js file", "Oscar::handleImport::static");
       const fileURL = craftFileURL(
         scope,
