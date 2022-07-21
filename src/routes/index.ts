@@ -5,7 +5,7 @@ import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/esbuild.ts";
 import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
-
+import * as logger from "../util/logger.ts";
 const packageRegex = /(?<package>[^@]+)(?:@(?<semver>(?:[~|^|>|>=|<|<=])?[0-9.|x]+|latest))?/;
 
 export class RootController extends Controller<"/"> {
@@ -68,7 +68,6 @@ export class RootController extends Controller<"/"> {
         packageSlug: parsedPackage,
       },
     );
-    console.dir(packageQuery);
     if (!packageQuery.org?.package) {
       response.status = 404;
       response.body = "Package not found";
@@ -81,7 +80,6 @@ export class RootController extends Controller<"/"> {
       );
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
-    console.log({ semver, version });
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
@@ -93,8 +91,6 @@ export class RootController extends Controller<"/"> {
       `${parsedPackage}@${version}`,
       path,
     );
-
-    console.log({ fileURL });
 
     if (request.url.searchParams.has("debug")) {
       const latest = maxSatisfying(versions.map((v) => v.version), "*");
@@ -125,17 +121,17 @@ export class RootController extends Controller<"/"> {
 
     // Node.js doesnt pass through a header
     // https://github.com/nodejs/node/pull/43852
-    // if (!request.headers.get("User-Agent")) {
+
     const parsedPath = parse(path);
     if (![".ts", ".js"].includes(parsedPath.ext)) {
+      logger.debug("Serving non-js file", "Oscar::handleImport::static");
       const fileURL = craftFileURL(
         scope,
         `${parsedPackage}@${version}`,
         `${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
       );
-      console.log({ fileURL });
+      logger.info(fileURL, "Oscar::handleImport::static");
       const res = await fetch(fileURL, { headers: { Authorization: `Bearer ${await auth.getToken()}` } });
-      console.dir(res);
       response.status = 200;
       response.body = await res.arrayBuffer();
       response.headers.append("Content-Type", res.headers.get("content-type")!);
@@ -147,12 +143,11 @@ export class RootController extends Controller<"/"> {
       `${parsedPackage}@${version}`,
       `.cache/${parsedPath.name}${parsedPath.ext}`,
     );
-    console.log("searching for ", cacheURL);
+    logger.info(cacheURL, "Oscar::handleImport::cache_check");
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
     if (exists.status === 200) {
-      console.log("within 200");
-      // return the cached file if it exists
+      logger.debug("within 200");
       response.status = 200;
       response.headers.append("Content-Type", "text/javascript");
       response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());

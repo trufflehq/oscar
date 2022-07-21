@@ -24,15 +24,16 @@ export const setupLogger = async () =>
   await setup({
     handlers: {
       format: new handlers.ConsoleHandler("DEBUG", {
-        formatter: ({ datetime, msg, loggerName, level }) => {
+        formatter: ({ datetime, msg, level, args }) => {
+          const scope = args[0] ?? "Oscar";
           return color(level)(
-            `[${format(datetime, "MM-dd-yyyy hh:mm:ss.SSS")} ${loggerName}]: ${msg}`,
+            `[${format(datetime, "MM-dd-yyyy hh:mm:ss.SSS")} ${scope}]: ${msg}`,
           );
         },
       }),
     },
     loggers: {
-      isense: {
+      default: {
         level: "DEBUG",
         handlers: ["format"],
       },

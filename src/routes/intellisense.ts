@@ -84,13 +84,6 @@ export class IntellisenseController extends Controller<"/"> {
     const { scope } = params as {
       scope?: string;
     };
-    logger.debug({ scope });
-
-    // TODO: push back/do not impl
-    // https://tfl.dev/@...
-    if (!scope) {
-      // fetch all orgs
-    }
 
     const listOrgPackagesRes = await graphQLClient.request<
       ListOrgPackagesQueryResponse
@@ -119,9 +112,6 @@ export class IntellisenseController extends Controller<"/"> {
     context.response.status = 200;
     context.response.type = "application/json";
     return;
-
-    // list all packages under the scope
-    // similar to https://deno.land/_api/x/graphql_request
   }
 
   public async scopePackage(
