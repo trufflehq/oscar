@@ -78,7 +78,7 @@ export class RootController extends Controller<"/"> {
     const versions: { version: string; satisfies: boolean }[] = packageQuery
       .org.package.packageVersionConnection?.nodes.map(
         (v) => ({ version: v.semver, satisfies: false }),
-      ).filter(({ version }) => valid(version));
+      ).filter(({ version }) => valid(version) !== null);
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
     // redirect to the exact version

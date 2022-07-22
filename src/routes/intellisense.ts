@@ -171,7 +171,7 @@ export class IntellisenseController extends Controller<"/"> {
 
     const versions = org!.package!.packageVersionConnection.nodes
       .map((n) => n.semver)
-      .filter((semver) => valid(semver));
+      .filter((semver) => valid(semver) !== null);
     logger.debug(versions);
     const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
       major(x) >= 1 ? `^${x}` : `~${x}`
