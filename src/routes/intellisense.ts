@@ -8,7 +8,7 @@ import {
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 // @deno-types="$fuse/fuse.d.ts"
 import Fuse from "$fuse/fuse.esm.js";
-import { major, maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
+import { major, maxSatisfying, satisfies, valid } from "$x/semver@v1.4.0/mod.ts";
 import * as log from "../util/logger.ts";
 const logger = log.getLogger("isense");
 
@@ -170,7 +170,8 @@ export class IntellisenseController extends Controller<"/"> {
     );
 
     const versions = org!.package!.packageVersionConnection.nodes
-      .map((n) => n.semver);
+      .map((n) => n.semver)
+      .filter((semver) => valid(semver));
     logger.debug(versions);
     const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
       major(x) >= 1 ? `^${x}` : `~${x}`

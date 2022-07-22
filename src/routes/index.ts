@@ -1,5 +1,5 @@
 import { parse } from "$std/path/mod.ts";
-import { clean, maxSatisfying, satisfies } from "$x/semver@v1.4.0/mod.ts";
+import { clean, maxSatisfying, satisfies, valid } from "$x/semver@v1.4.0/mod.ts";
 import { getPackageQuery, GetPackageQueryResponse, graphQLClient } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
@@ -78,7 +78,7 @@ export class RootController extends Controller<"/"> {
     const versions: { version: string; satisfies: boolean }[] = packageQuery
       .org.package.packageVersionConnection?.nodes.map(
         (v) => ({ version: v.semver, satisfies: false }),
-      );
+      ).filter(({ version }) => valid(version));
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
     // redirect to the exact version
