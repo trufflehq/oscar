@@ -39,13 +39,13 @@ export interface GetPackageQueryResponse extends BaseGraphQLResponse {
 }
 
 export const getPackageQuery = gql`
-	query GetPackage($orgSlug: String!, $packageSlug: String!) {
+	query GetPackage($orgSlug: String!, $packageSlug: String!, $first: Int, $after: String) {
 		org(input: { slug: $orgSlug }) {
 			package(slug: $packageSlug) {
 				id
 				name
 				slug
-				packageVersionConnection {
+				packageVersionConnection(first: $first, after: $after) {
 					pageInfo {
 						endCursor
 						hasNextPage
