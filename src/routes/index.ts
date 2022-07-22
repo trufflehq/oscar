@@ -83,7 +83,7 @@ export class RootController extends Controller<"/"> {
         break;
       }
 
-      logger.debug("packageQuery res", packageQuery);
+      logger.debug("packageQuery res", JSON.stringify(packageQuery));
       const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
 
       if (!pageInfo.hasNextPage) {
