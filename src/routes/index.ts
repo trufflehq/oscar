@@ -144,6 +144,7 @@ export class RootController extends Controller<"/"> {
       `${parsedPackage}@${version}`,
       `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
     );
+    logger.info(JSON.stringify(versions), "Oscar::handleImport::versions");
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
