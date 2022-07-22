@@ -85,11 +85,12 @@ export class RootController extends Controller<"/"> {
 
       logger.debug("packageQuery res", JSON.stringify(packageQuery));
       const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
-      logger.debug("pageInfo", pageInfo);
+      logger.debug("pageInfo", JSON.stringify(pageInfo));
 
       if (!pageInfo.hasNextPage) {
         logger.debug("Oscar::handleImport::has_next_page");
         hasMore = false;
+      } else {
         nextCursor = pageInfo.endCursor;
       }
 
