@@ -1,6 +1,6 @@
 import { parse } from "$std/path/mod.ts";
 import { clean, maxSatisfying, satisfies, valid } from "$x/semver@v1.4.0/mod.ts";
-import { getPackageQuery, GetPackageQueryResponse, graphQLClient } from "../gql/mod.ts";
+import { getPackageQuery, GetPackageQueryResponse, graphQLClient, PackageVersion } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/esbuild.ts";
@@ -62,23 +62,48 @@ export class RootController extends Controller<"/"> {
       >;
     const range = semver ?? "*";
 
-    const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
-      getPackageQuery,
-      {
-        orgSlug: scope.replace("@", ""),
-        packageSlug: parsedPackage,
-      },
-    );
-    if (!packageQuery.org?.package) {
+    let packageVersions: PackageVersion[] = [];
+    let hasMore = true;
+    let nextCursor: string | null | undefined;
+    let isMissingPackage = false;
+
+    while (hasMore) {
+      const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
+        getPackageQuery,
+        {
+          orgSlug: scope.replace("@", ""),
+          packageSlug: parsedPackage,
+          first: 25,
+          after: nextCursor,
+        },
+      );
+
+      if (!packageQuery.org?.package) {
+        isMissingPackage = true;
+        break;
+      }
+
+      const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
+
+      if (!pageInfo.hasNextPage) {
+        logger.debug("Oscar::handleImport::has_next_page");
+        hasMore = false;
+        nextCursor = pageInfo.endCursor;
+      }
+
+      packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
+    }
+
+    if (isMissingPackage) {
       response.status = 404;
       response.body = "Package not found";
+      logger.error("Oscar::handleImport::missing_package::error");
       return;
     }
 
-    const versions: { version: string; satisfies: boolean }[] = packageQuery
-      .org.package.packageVersionConnection?.nodes.map(
-        (v) => ({ version: v.semver, satisfies: false }),
-      ).filter(({ version }) => valid(version) !== null);
+    const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
+      (v) => ({ version: v.semver, satisfies: false }),
+    ).filter(({ version }) => valid(version) !== null);
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
     logger.debug(semver, "Oscar::handleImport::semver");
