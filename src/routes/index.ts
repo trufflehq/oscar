@@ -83,9 +83,7 @@ export class RootController extends Controller<"/"> {
         break;
       }
 
-      logger.debug("packageQuery res", JSON.stringify(packageQuery));
       const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
-      logger.debug("pageInfo", JSON.stringify(pageInfo), pageInfo.hasNextPage);
 
       if (pageInfo.hasNextPage) {
         logger.debug("Oscar::handleImport::has_next_page");
@@ -109,8 +107,6 @@ export class RootController extends Controller<"/"> {
     ).filter(({ version }) => valid(version) !== null);
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
-    logger.debug(semver, "Oscar::handleImport::semver");
-    logger.debug(version, "Oscar::handleImport::version");
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
@@ -174,7 +170,6 @@ export class RootController extends Controller<"/"> {
       `${parsedPackage}@${version}`,
       `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
     );
-    logger.info(JSON.stringify(versions), "Oscar::handleImport::versions");
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
