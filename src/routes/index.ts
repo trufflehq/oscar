@@ -81,6 +81,8 @@ export class RootController extends Controller<"/"> {
       ).filter(({ version }) => valid(version) !== null);
 
     const version = maxSatisfying(versions.map((v) => v.version), range);
+    logger.debug(semver, "Oscar::handleImport::semver");
+    logger.debug(version, "Oscar::handleImport::version");
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
