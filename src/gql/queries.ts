@@ -1,4 +1,4 @@
-import { gql } from "$x/graphql_request@v4.1.0/mod.ts";
+// import { gql } from "$x/graphql_request@v4.1.0/mod.ts";
 
 type UUID = string;
 
@@ -38,7 +38,7 @@ export interface GetPackageQueryResponse extends BaseGraphQLResponse {
   } | null;
 }
 
-export const getPackageQuery = gql`
+export const getPackageQuery = `
 	query GetPackage($orgSlug: String!, $packageSlug: String!, $first: Int, $after: String) {
 		org(input: { slug: $orgSlug }) {
 			package(slug: $packageSlug) {
@@ -87,7 +87,7 @@ export interface ListOrgPackagesQueryResponse extends BaseGraphQLResponse {
   } | null;
 }
 
-export const listOrgPackagesQuery = gql`
+export const listOrgPackagesQuery = `
 	query ListPackages($orgSlug: String!) {
 		org(input: { slug: $orgSlug }) {
 			packageConnection {
