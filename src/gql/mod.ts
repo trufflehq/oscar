@@ -1,2 +1,2 @@
-export { graphQLClient } from "./client.ts";
+export { graphQLClient, prodGraphQLClient } from "./client.ts";
 export * from "./queries.ts";
