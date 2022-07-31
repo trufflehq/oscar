@@ -2,14 +2,20 @@
 
 const endpoint = Deno.env.get("GRAPHQL_ENDPOINT")!;
 const token = Deno.env.get("GRAPHQL_TOKEN")!;
+
+const prodEndpoint = Deno.env.get("PROD_GRAPHQL_ENDPOINT")!;
+const prodToken = Deno.env.get("PROD_GRAPHQL_TOKEN")!;
+
 interface GraphqlFetchResponse<T> {
   data: T;
 }
 class GraphQLClient {
   private endpoint: string;
+  private token: string;
 
-  constructor(endpoint: string) {
+  constructor(endpoint: string, token: string) {
     this.endpoint = endpoint;
+    this.token = token;
   }
 
   async request<T>(query: string, variables: Record<string, unknown>) {
@@ -20,7 +26,7 @@ class GraphQLClient {
         variables,
       }),
       headers: {
-        authorization: `Bearer ${token}`,
+        authorization: `Bearer ${this.token}`,
       },
     });
 
@@ -30,4 +36,5 @@ class GraphQLClient {
   }
 }
 
-export const graphQLClient = new GraphQLClient(endpoint);
+export const graphQLClient = new GraphQLClient(endpoint, token);
+export const prodGraphQLClient = new GraphQLClient(prodEndpoint, prodToken);
