@@ -145,11 +145,18 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
+    console.log("pv", packageVersions);
+
     const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
       (v) => ({ version: v.semver, satisfies: false }),
     ).filter(({ version }) => valid(version) !== null);
 
+    console.log("v", versions);
+
     const version = maxSatisfying(versions.map((v) => v.version), range);
+
+    console.log("v", version);
+
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
