@@ -80,6 +80,7 @@ export class RootController extends Controller<"/"> {
 
     // TODO: cleanup fetching all pages for query
     while (hasMore) {
+      // TODO: don't need moduleConnection for every packageVersion (huge response)
       const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
         getPackageQuery,
         {
@@ -145,17 +146,11 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
-    console.log("pv", packageVersions);
-
     const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
       (v) => ({ version: v.semver, satisfies: false }),
     ).filter(({ version }) => valid(version) !== null);
 
-    console.log("v", versions);
-
     const version = maxSatisfying(versions.map((v) => v.version), range);
-
-    console.log("v", version);
 
     // redirect to the exact version
     // after calculating through semver
