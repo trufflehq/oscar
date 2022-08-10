@@ -103,6 +103,7 @@ export class RootController extends Controller<"/"> {
         nextCursor = pageInfo.endCursor;
       } else {
         hasMore = false;
+        nextCursor = undefined;
       }
 
       packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
@@ -110,7 +111,6 @@ export class RootController extends Controller<"/"> {
 
     // TODO: rm and have 1 oscar running for staging, 1 for prod
     hasMore = true; // reset
-    nextCursor = null; // reset
     while (hasMore) {
       const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
         getPackageQuery,
