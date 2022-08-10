@@ -68,12 +68,17 @@ export class RootController extends Controller<"/"> {
       >;
     const range = semver ?? "*";
 
+    // TODO: all this code up until the redirect we should be able to only do
+    // if/when clean(semver!) !== semver.
+    // eg if it's a calculated semver, just call a fn redirectToCorrectSemver()
+    // and redirectToCorrectSemver has all the queries, etc... in it
     let packageVersions: PackageVersion[] = [];
     let hasMore = true;
     let nextCursor: string | null | undefined;
     let isMissingStagingPackage = false;
     let isMissingProdPackage = false;
 
+    // TODO: cleanup fetching all pages for query
     while (hasMore) {
       const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
         getPackageQuery,
@@ -102,6 +107,7 @@ export class RootController extends Controller<"/"> {
       packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
     }
 
+    // TODO: rm and have 1 oscar running for staging, 1 for prod
     while (hasMore) {
       const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
         getPackageQuery,
@@ -152,7 +158,7 @@ export class RootController extends Controller<"/"> {
 
     const fileURL = craftFileURL(
       scope,
-      `${parsedPackage}@${version}`,
+      `${parsedPackage}@${semver}`,
       path,
     );
 
@@ -166,7 +172,7 @@ export class RootController extends Controller<"/"> {
       response.body = {
         fileURL,
         ...params,
-        maxSatisfying: version,
+        maxSatisfying: semver,
         parsedPackage,
         latest,
         maxVersion,
@@ -191,7 +197,7 @@ export class RootController extends Controller<"/"> {
       logger.debug("Serving non-js file", "Oscar::handleImport::static");
       const fileURL = craftFileURL(
         scope,
-        `${parsedPackage}@${version}`,
+        `${parsedPackage}@${semver}`,
         `${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
       );
       logger.info(fileURL, "Oscar::handleImport::static");
@@ -204,7 +210,7 @@ export class RootController extends Controller<"/"> {
 
     const cacheURL = craftFileURL(
       scope,
-      `${parsedPackage}@${version}`,
+      `${parsedPackage}@${semver}`,
       `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
     );
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
@@ -224,7 +230,7 @@ export class RootController extends Controller<"/"> {
 
     await uploadFile(
       scope,
-      `${parsedPackage}@${version}`,
+      `${parsedPackage}@${semver}`,
       `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
       built,
     );
