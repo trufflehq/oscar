@@ -109,6 +109,7 @@ export class RootController extends Controller<"/"> {
     }
 
     // TODO: rm and have 1 oscar running for staging, 1 for prod
+    nextCursor = null; // reset
     while (hasMore) {
       const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
         getPackageQuery,
