@@ -12,6 +12,9 @@ import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/esbuild.ts";
 import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import * as logger from "../util/logger.ts";
+
+const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
+const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
 const packageRegex = /(?<package>[^@]+)(?:@(?<semver>(?:[~|^|>|>=|<|<=])?[0-9.|x]+|latest))?/;
 
 export class RootController extends Controller<"/"> {
@@ -32,7 +35,6 @@ export class RootController extends Controller<"/"> {
   public headers(response: OakResponse) {
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set("Access-Control-Allow-Headers", "*");
-    response.headers.set("Cache-Control", "max-age=14400");
     return true;
   }
 
@@ -157,8 +159,13 @@ export class RootController extends Controller<"/"> {
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
+      // cache redirects for shorter amount of time
+      response.headers.set("Cache-Control", `max-age=${REDIRECT_CACHE_SECONDS}`);
       return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}`);
     }
+
+    // cache files for longer period of time
+    response.headers.set("Cache-Control", `max-age=${FILE_CACHE_SECONDS}`);
 
     const fileURL = craftFileURL(
       scope,
