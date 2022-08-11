@@ -72,96 +72,11 @@ export class RootController extends Controller<"/"> {
 
     // TODO: all this code up until the redirect we should be able to only do
     // if/when clean(semver!) !== semver.
-    // eg if it's a calculated semver, just call a fn redirectToCorrectSemver()
-    // and redirectToCorrectSemver has all the queries, etc... in it
-    let packageVersions: PackageVersion[] = [];
-    let hasMore = true;
-    let nextCursor: string | null | undefined;
-    let isMissingStagingPackage = false;
-    let isMissingProdPackage = false;
-
-    // TODO: cleanup fetching all pages for query
-    while (hasMore) {
-      // TODO: don't need moduleConnection for every packageVersion (huge response)
-      const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
-        getPackageQuery,
-        {
-          orgSlug: scope.replace("@", ""),
-          packageSlug: parsedPackage,
-          first: 25,
-          after: nextCursor,
-        },
-      );
-
-      if (!packageQuery.org?.package) {
-        isMissingStagingPackage = true;
-        break;
-      }
-
-      const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
-
-      if (pageInfo.hasNextPage) {
-        logger.debug("Oscar::handleImport::has_next_page");
-        nextCursor = pageInfo.endCursor;
-      } else {
-        hasMore = false;
-        nextCursor = undefined;
-      }
-
-      packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
-    }
-
-    // TODO: rm and have 1 oscar running for staging, 1 for prod
-    hasMore = true; // reset
-    while (hasMore) {
-      const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
-        getPackageQuery,
-        {
-          orgSlug: scope.replace("@", ""),
-          packageSlug: parsedPackage,
-          first: 25,
-          after: nextCursor,
-        },
-      );
-
-      if (!packageQuery.org?.package) {
-        isMissingProdPackage = true;
-        break;
-      }
-
-      const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
-
-      if (pageInfo.hasNextPage) {
-        logger.debug("Oscar::handleImport::has_next_page");
-        nextCursor = pageInfo.endCursor;
-      } else {
-        hasMore = false;
-      }
-
-      packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
-    }
-
-    const isMissingPackage = isMissingProdPackage && isMissingStagingPackage;
-
-    if (isMissingPackage) {
-      response.status = 404;
-      response.body = "Package not found";
-      logger.error("Oscar::handleImport::missing_package::error");
-      return;
-    }
-
-    const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
-      (v) => ({ version: v.semver, satisfies: false }),
-    ).filter(({ version }) => valid(version) !== null);
-
-    const version = maxSatisfying(versions.map((v) => v.version), range);
 
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
-      // cache redirects for shorter amount of time
-      response.headers.set("Cache-Control", `max-age=${REDIRECT_CACHE_SECONDS}`);
-      return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}`);
+      return redirectToCorrectSemver({ response, scope, parsedPackage, range, path });
     }
 
     // cache files for longer period of time
@@ -173,25 +88,25 @@ export class RootController extends Controller<"/"> {
       path,
     );
 
-    if (request.url.searchParams.has("debug")) {
-      const latest = maxSatisfying(versions.map((v) => v.version), "*");
-      let maxVersion: string | null = latest!;
-      if (!satisfies(maxVersion, range!)) maxVersion = null;
+    // if (request.url.searchParams.has("debug")) {
+    //   const latest = maxSatisfying(versions.map((v) => v.version), "*");
+    //   let maxVersion: string | null = latest!;
+    //   if (!satisfies(maxVersion, range!)) maxVersion = null;
 
-      response.status = 200;
-      response.type = "application/json";
-      response.body = {
-        fileURL,
-        ...params,
-        maxSatisfying: semver,
-        parsedPackage,
-        latest,
-        maxVersion,
-        satisfies: versions.filter((v) => v.satisfies).map((v) => v.version),
-        versions: versions.map((v) => v.version),
-      };
-      return;
-    }
+    //   response.status = 200;
+    //   response.type = "application/json";
+    //   response.body = {
+    //     fileURL,
+    //     ...params,
+    //     maxSatisfying: semver,
+    //     parsedPackage,
+    //     latest,
+    //     maxVersion,
+    //     satisfies: versions.filter((v) => v.satisfies).map((v) => v.version),
+    //     versions: versions.map((v) => v.version),
+    //   };
+    //   return;
+    // }
 
     if (request.headers.get("User-Agent")?.toLowerCase().includes("deno")) {
       response.status = 200;
@@ -251,4 +166,100 @@ export class RootController extends Controller<"/"> {
     response.headers.append("Content-Type", "text/javascript");
     return;
   }
+}
+
+async function redirectToCorrectSemver(
+  { response, scope, parsedPackage, range, path }: {
+    response: OakResponse;
+    scope: `@${string}`;
+    parsedPackage: string | undefined;
+    range: string;
+    path: string;
+  },
+) {
+  let packageVersions: PackageVersion[] = [];
+  let hasMore = true;
+  let nextCursor: string | null | undefined;
+  let isMissingStagingPackage = false;
+  let isMissingProdPackage = false;
+
+  // TODO: cleanup fetching all pages for query
+  while (hasMore) {
+    // TODO: don't need moduleConnection for every packageVersion (huge response)
+    const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
+      getPackageQuery,
+      {
+        orgSlug: scope.replace("@", ""),
+        packageSlug: parsedPackage,
+        first: 25,
+        after: nextCursor,
+      },
+    );
+
+    if (!packageQuery.org?.package) {
+      isMissingStagingPackage = true;
+      break;
+    }
+
+    const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
+
+    if (pageInfo.hasNextPage) {
+      logger.debug("Oscar::handleImport::has_next_page");
+      nextCursor = pageInfo.endCursor;
+    } else {
+      hasMore = false;
+      nextCursor = undefined;
+    }
+
+    packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
+  }
+
+  // TODO: rm and have 1 oscar running for staging, 1 for prod
+  hasMore = true; // reset
+  while (hasMore) {
+    const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
+      getPackageQuery,
+      {
+        orgSlug: scope.replace("@", ""),
+        packageSlug: parsedPackage,
+        first: 25,
+        after: nextCursor,
+      },
+    );
+
+    if (!packageQuery.org?.package) {
+      isMissingProdPackage = true;
+      break;
+    }
+
+    const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
+
+    if (pageInfo.hasNextPage) {
+      logger.debug("Oscar::handleImport::has_next_page");
+      nextCursor = pageInfo.endCursor;
+    } else {
+      hasMore = false;
+    }
+
+    packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
+  }
+
+  const isMissingPackage = isMissingProdPackage && isMissingStagingPackage;
+
+  if (isMissingPackage) {
+    response.status = 404;
+    response.body = "Package not found";
+    logger.error("Oscar::handleImport::missing_package::error");
+    return;
+  }
+
+  const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
+    (v) => ({ version: v.semver, satisfies: false }),
+  ).filter(({ version }) => valid(version) !== null);
+
+  const version = maxSatisfying(versions.map((v) => v.version), range);
+
+  // cache redirects for shorter amount of time
+  response.headers.set("Cache-Control", `max-age=${REDIRECT_CACHE_SECONDS}`);
+  return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}`);
 }
