@@ -1,5 +1,5 @@
 import { parse } from "$std/path/mod.ts";
-import { clean, maxSatisfying, satisfies, valid } from "$x/semver@v1.4.0/mod.ts";
+import { clean, maxSatisfying, valid } from "$x/semver@v1.4.0/mod.ts";
 import {
   getPackageQuery,
   GetPackageQueryResponse,
