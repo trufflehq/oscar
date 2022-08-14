@@ -88,6 +88,8 @@ export class RootController extends Controller<"/"> {
       path,
     );
 
+    logger.info(fileURL, "Oscar::riley::fileUrlDebug");
+
     // if (request.url.searchParams.has("debug")) {
     //   const latest = maxSatisfying(versions.map((v) => v.version), "*");
     //   let maxVersion: string | null = latest!;
