@@ -76,6 +76,7 @@ export class RootController extends Controller<"/"> {
     // redirect to the exact version
     // after calculating through semver
     if (clean(semver!) !== semver) {
+      logger.debug(range, "Oscar::handleImport::not_clean");
       return redirectToCorrectSemver({ response, scope, parsedPackage, range, path });
     }
 
@@ -88,7 +89,7 @@ export class RootController extends Controller<"/"> {
       path,
     );
 
-    logger.info(fileURL, "Oscar::riley::fileUrlDebug");
+    logger.debug(fileURL, "Oscar::riley::fileUrlDebug");
 
     // if (request.url.searchParams.has("debug")) {
     //   const latest = maxSatisfying(versions.map((v) => v.version), "*");
@@ -141,7 +142,9 @@ export class RootController extends Controller<"/"> {
       `${parsedPackage}@${semver}`,
       `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
     );
+
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
+
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
     if (exists.status === 200) {
@@ -155,6 +158,8 @@ export class RootController extends Controller<"/"> {
     // generate .js file
     const content = await fetch(fileURL);
     const built = buildJavascript(await content.text());
+
+    logger.debug(`.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`, "Oscar::importFile:upload_file");
 
     await uploadFile(
       scope,
@@ -260,6 +265,8 @@ async function redirectToCorrectSemver(
   ).filter(({ version }) => valid(version) !== null);
 
   const version = maxSatisfying(versions.map((v) => v.version), range);
+
+  logger.debug("Oscar::handleImport::redirect::version", version);
 
   // cache redirects for shorter amount of time
   response.headers.set("Cache-Control", `max-age=${REDIRECT_CACHE_SECONDS}`);
