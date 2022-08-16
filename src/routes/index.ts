@@ -147,6 +147,8 @@ export class RootController extends Controller<"/"> {
 
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
+
+    logger.debug(exists, "Oscar::handleImport::exists");
     if (exists.status === 200) {
       logger.debug("within 200");
       response.status = 200;
