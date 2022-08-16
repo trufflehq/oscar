@@ -70,6 +70,7 @@ export class RootController extends Controller<"/"> {
       >;
     const range = semver ?? "*";
 
+    logger.debug(path, "Oscar::riley::pathDebug");
     // TODO: all this code up until the redirect we should be able to only do
     // if/when clean(semver!) !== semver.
 
