@@ -12,6 +12,7 @@ import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/esbuild.ts";
 import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import * as logger from "../util/logger.ts";
+import { bundle as bundleEmit } from "$x/emit/mod.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
@@ -49,6 +50,7 @@ export class RootController extends Controller<"/"> {
       pkg?: `${string}@${string}`;
       path?: string;
     };
+    console.dir({ scope, pkg, path });
     if (!scope || !pkg || !path) {
       response.status = 400;
       response.body = "Invalid request";
@@ -80,6 +82,8 @@ export class RootController extends Controller<"/"> {
       logger.debug(range, "Oscar::handleImport::not_clean");
       return redirectToCorrectSemver({ response, scope, parsedPackage, range, path });
     }
+    const bundle = typeof request.url.searchParams.get("bundle") === "string";
+    logger.debug(bundle, "Oscar::handleImport::bundle");
 
     // cache files for longer period of time
     response.headers.set("Cache-Control", `max-age=${FILE_CACHE_SECONDS}`);
@@ -92,43 +96,22 @@ export class RootController extends Controller<"/"> {
 
     logger.debug(fileURL, "Oscar::riley::fileUrlDebug");
 
-    // if (request.url.searchParams.has("debug")) {
-    //   const latest = maxSatisfying(versions.map((v) => v.version), "*");
-    //   let maxVersion: string | null = latest!;
-    //   if (!satisfies(maxVersion, range!)) maxVersion = null;
-
-    //   response.status = 200;
-    //   response.type = "application/json";
-    //   response.body = {
-    //     fileURL,
-    //     ...params,
-    //     maxSatisfying: semver,
-    //     parsedPackage,
-    //     latest,
-    //     maxVersion,
-    //     satisfies: versions.filter((v) => v.satisfies).map((v) => v.version),
-    //     versions: versions.map((v) => v.version),
-    //   };
-    //   return;
-    // }
-
     if (request.headers.get("User-Agent")?.toLowerCase().includes("deno")) {
       response.status = 200;
-      response.body = await fetch(fileURL).then((r) => r.arrayBuffer());
+      response.body = await fetch(fileURL).then((r) => r.text());
       response.headers.append("Content-Type", "text/typescript");
       return;
     }
 
     // Node.js doesnt pass through a header
     // https://github.com/nodejs/node/pull/43852
-
     const parsedPath = parse(path);
     if (![".ts", ".tsx", ".js", ".jsx"].includes(parsedPath.ext)) {
       logger.debug("Serving non-js file", "Oscar::handleImport::static");
       const fileURL = craftFileURL(
         scope,
         `${parsedPackage}@${semver}`,
-        `${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
+        `${parsedPath.dir ? `${parsedPath.dir}/` : ""}${parsedPath.name}${parsedPath.ext}`,
       );
       logger.info(fileURL, "Oscar::handleImport::static");
       const res = await fetch(fileURL, { headers: { Authorization: `Bearer ${await auth.getToken()}` } });
@@ -138,10 +121,51 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
+    if (bundle) {
+      const cacheURL = craftFileURL(
+        scope,
+        `${parsedPackage}@${semver}`,
+        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+      );
+
+      logger.info(cacheURL, "Oscar::bundle::cache_check");
+
+      // checking if the cached file exists
+      const exists = await fetch(cacheURL, { method: "HEAD" });
+
+      logger.debug(exists, "Oscar::bundle::exists");
+      if (exists.status === 200) {
+        logger.debug("within 200");
+        response.status = 200;
+        response.headers.append("Content-Type", "text/javascript");
+        response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
+        return;
+      }
+
+      const bundled = await bundleEmit(new URL(fileURL));
+
+      logger.debug(
+        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+        "Oscar::bundle:upload_file",
+      );
+
+      await uploadFile(
+        scope,
+        `${parsedPackage}@${semver}`,
+        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+        bundled.code,
+      );
+
+      response.status = 200;
+      response.body = bundled.code;
+      response.headers.append("Content-Type", "text/javascript");
+      return;
+    }
+
     const cacheURL = craftFileURL(
       scope,
       `${parsedPackage}@${semver}`,
-      `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/${parsedPath.name}${parsedPath.ext}`,
     );
 
     logger.info(cacheURL, "Oscar::handleImport::cache_check");
@@ -162,12 +186,15 @@ export class RootController extends Controller<"/"> {
     const content = await fetch(fileURL);
     const built = buildJavascript(await content.text());
 
-    logger.debug(`.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`, "Oscar::importFile:upload_file");
+    logger.debug(
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/${parsedPath.name}${parsedPath.ext}`,
+      "Oscar::importFile:upload_file",
+    );
 
     await uploadFile(
       scope,
       `${parsedPackage}@${semver}`,
-      `.cache/${parsedPath.dir}/${parsedPath.name}${parsedPath.ext}`,
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/${parsedPath.name}${parsedPath.ext}`,
       built,
     );
 
