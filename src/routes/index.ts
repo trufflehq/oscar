@@ -9,10 +9,10 @@ import {
 } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
-import { buildJavascript } from "../util/esbuild.ts";
+import { buildJavascript } from "../util/build.ts";
 import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import * as logger from "../util/logger.ts";
-import { bundle as bundleEmit } from "$x/emit/mod.ts";
+import { bundle as bundleEmit } from "$x/emit@0.9.0/mod.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
@@ -50,7 +50,7 @@ export class RootController extends Controller<"/"> {
       pkg?: `${string}@${string}`;
       path?: string;
     };
-    console.dir({ scope, pkg, path });
+
     if (!scope || !pkg || !path) {
       response.status = 400;
       response.body = "Invalid request";
@@ -83,7 +83,6 @@ export class RootController extends Controller<"/"> {
       return redirectToCorrectSemver({ response, scope, parsedPackage, range, path });
     }
     const bundle = typeof request.url.searchParams.get("bundle") === "string";
-    logger.debug(bundle, "Oscar::handleImport::bundle");
 
     // cache files for longer period of time
     response.headers.set("Cache-Control", `max-age=${FILE_CACHE_SECONDS}`);
@@ -98,7 +97,7 @@ export class RootController extends Controller<"/"> {
 
     if (request.headers.get("User-Agent")?.toLowerCase().includes("deno")) {
       response.status = 200;
-      response.body = await fetch(fileURL).then((r) => r.text());
+      response.body = await fetch(fileURL).then((r) => r.arrayBuffer());
       response.headers.append("Content-Type", "text/typescript");
       return;
     }
