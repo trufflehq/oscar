@@ -1,10 +1,5 @@
-// import { GraphQLClient } from "$x/graphql_request@v4.1.0/mod.ts";
-
 const endpoint = Deno.env.get("GRAPHQL_ENDPOINT")!;
 const token = Deno.env.get("GRAPHQL_TOKEN")!;
-
-const prodEndpoint = Deno.env.get("PROD_GRAPHQL_ENDPOINT")!;
-const prodToken = Deno.env.get("PROD_GRAPHQL_TOKEN")!;
 
 interface GraphqlFetchResponse<T> {
   data: T;
@@ -37,4 +32,3 @@ class GraphQLClient {
 }
 
 export const graphQLClient = new GraphQLClient(endpoint, token);
-export const prodGraphQLClient = new GraphQLClient(prodEndpoint, prodToken);
