@@ -1,4 +1,6 @@
-import { parse } from "$std/path/mod.ts";
+import { parse, ParsedPath } from "$std/path/mod.ts";
+import { bundle as bundleEmit } from "$x/emit@0.9.0/mod.ts";
+import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import { clean, maxSatisfying, valid } from "$x/semver@v1.4.0/mod.ts";
 import {
   getPackageQuery,
@@ -10,9 +12,7 @@ import {
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/build.ts";
-import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import * as logger from "../util/logger.ts";
-import { bundle as bundleEmit } from "$x/emit@0.9.0/mod.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
@@ -37,6 +37,56 @@ export class RootController extends Controller<"/"> {
     response.headers.set("Access-Control-Allow-Origin", "*");
     response.headers.set("Access-Control-Allow-Headers", "*");
     return true;
+  }
+
+  private async handleBundle(
+    { response, scope, parsedPackage, parsedPath, semver, fileURL }: {
+      response: OakResponse;
+      scope: `@${string}`;
+      parsedPackage?: string;
+      parsedPath: ParsedPath;
+      semver: string;
+      fileURL: string;
+    },
+  ) {
+    const cacheURL = craftFileURL(
+      scope,
+      `${parsedPackage}@${semver}`,
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+    );
+
+    logger.info(cacheURL, "Oscar::bundle::cache_check");
+
+    // checking if the cached file exists
+    const exists = await fetch(cacheURL, { method: "HEAD" });
+
+    logger.debug(exists, "Oscar::bundle::exists");
+    if (exists.status === 200) {
+      logger.debug("within 200");
+      response.status = 200;
+      response.headers.append("Content-Type", "text/javascript");
+      response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
+      return;
+    }
+
+    const bundled = await bundleEmit(new URL(fileURL));
+
+    logger.debug(
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+      "Oscar::bundle:upload_file",
+    );
+
+    await uploadFile(
+      scope,
+      `${parsedPackage}@${semver}`,
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+      bundled.code,
+    );
+
+    response.status = 200;
+    response.body = bundled.code;
+    response.headers.append("Content-Type", "text/javascript");
+    return;
   }
 
   public async handleImport(
@@ -121,44 +171,7 @@ export class RootController extends Controller<"/"> {
     }
 
     if (bundle) {
-      const cacheURL = craftFileURL(
-        scope,
-        `${parsedPackage}@${semver}`,
-        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-      );
-
-      logger.info(cacheURL, "Oscar::bundle::cache_check");
-
-      // checking if the cached file exists
-      const exists = await fetch(cacheURL, { method: "HEAD" });
-
-      logger.debug(exists, "Oscar::bundle::exists");
-      if (exists.status === 200) {
-        logger.debug("within 200");
-        response.status = 200;
-        response.headers.append("Content-Type", "text/javascript");
-        response.body = await fetch(cacheURL).then((r) => r.arrayBuffer());
-        return;
-      }
-
-      const bundled = await bundleEmit(new URL(fileURL));
-
-      logger.debug(
-        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-        "Oscar::bundle:upload_file",
-      );
-
-      await uploadFile(
-        scope,
-        `${parsedPackage}@${semver}`,
-        `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-        bundled.code,
-      );
-
-      response.status = 200;
-      response.body = bundled.code;
-      response.headers.append("Content-Type", "text/javascript");
-      return;
+      return this.handleBundle({ scope, parsedPackage, parsedPath, semver, fileURL, response });
     }
 
     const cacheURL = craftFileURL(
@@ -213,72 +226,74 @@ async function redirectToCorrectSemver(
     path: string;
   },
 ) {
-  let packageVersions: PackageVersion[] = [];
+  // let packageVersions: PackageVersion[] = [];
   let hasMore = true;
   let nextCursor: string | null | undefined;
   let isMissingStagingPackage = false;
   let isMissingProdPackage = false;
 
-  // TODO: cleanup fetching all pages for query
-  while (hasMore) {
-    // TODO: don't need moduleConnection for every packageVersion (huge response)
+  async function getStagingPackages(
+    scope: string,
+    packageSlug: string,
+    first = 25,
+    after?: string,
+  ): Promise<PackageVersion[]> {
     const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
       getPackageQuery,
       {
         orgSlug: scope.replace("@", ""),
-        packageSlug: parsedPackage,
-        first: 25,
-        after: nextCursor,
+        packageSlug,
+        first,
+        after,
       },
     );
 
     if (!packageQuery.org?.package) {
       isMissingStagingPackage = true;
-      break;
+      return [];
     }
+    const { packageVersionConnection } = packageQuery.org.package;
+    const initial = packageVersionConnection.nodes;
+    const pageInfo = packageVersionConnection.pageInfo;
+    if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
 
-    const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
+    const next = await getStagingPackages(scope, packageSlug, 25, pageInfo.endCursor);
 
-    if (pageInfo.hasNextPage) {
-      logger.debug("Oscar::handleImport::has_next_page");
-      nextCursor = pageInfo.endCursor;
-    } else {
-      hasMore = false;
-      nextCursor = undefined;
-    }
-
-    packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
+    return initial.concat(next);
   }
+  const stagingPackageVersions = await getStagingPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
 
-  // TODO: rm and have 1 oscar running for staging, 1 for prod
-  hasMore = true; // reset
-  while (hasMore) {
-    const packageQuery = await prodGraphQLClient.request<GetPackageQueryResponse>(
+  async function getProdPackages(
+    scope: string,
+    packageSlug: string,
+    first = 25,
+    after?: string,
+  ): Promise<PackageVersion[]> {
+    const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
       getPackageQuery,
       {
         orgSlug: scope.replace("@", ""),
-        packageSlug: parsedPackage,
-        first: 25,
-        after: nextCursor,
+        packageSlug,
+        first,
+        after,
       },
     );
 
     if (!packageQuery.org?.package) {
-      isMissingProdPackage = true;
-      break;
+      isMissingStagingPackage = true;
+      return [];
     }
+    const { packageVersionConnection } = packageQuery.org.package;
+    const initial = packageVersionConnection.nodes;
+    const pageInfo = packageVersionConnection.pageInfo;
+    if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
 
-    const pageInfo = packageQuery.org.package.packageVersionConnection.pageInfo;
+    const next = await getStagingPackages(scope, packageSlug, 25, pageInfo.endCursor);
 
-    if (pageInfo.hasNextPage) {
-      logger.debug("Oscar::handleImport::has_next_page");
-      nextCursor = pageInfo.endCursor;
-    } else {
-      hasMore = false;
-    }
-
-    packageVersions = packageVersions.concat(packageQuery.org.package.packageVersionConnection.nodes);
+    return initial.concat(next);
   }
+  const prodPackageVersions = await getProdPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
+  const packageVersions = stagingPackageVersions.concat(prodPackageVersions);
 
   const isMissingPackage = isMissingProdPackage && isMissingStagingPackage;
 
