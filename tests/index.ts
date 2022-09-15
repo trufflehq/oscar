@@ -47,9 +47,9 @@ Deno.test("fetching a package", async (t) => {
     await client.get("/@truffle/mogul-menu@~0.1.0/tsconfig.json").set("User-Agent", "").send().expect(302);
   });
 
-  await t.step("fetch non-js file", async () => {
+  await t.step("fetch ts file", async () => {
     const client = await superoak(new Oscar().app);
-    const res = await client.get("/@truffle/mogul-menu@0.1.90/tsconfig.json").set("User-Agent", "").expect(200);
-    assertEquals(res.headers["content-type"], "application/json");
+    const res = await client.get("/@truffle/mogul-menu@0.1.90/mod.ts").expect(200);
+    assertEquals(res.headers["content-type"], "text/typescript");
   });
 });
