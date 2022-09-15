@@ -2,13 +2,7 @@ import { parse, ParsedPath } from "$std/path/mod.ts";
 import { bundle as bundleEmit } from "$x/emit@0.9.0/mod.ts";
 import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import { clean, maxSatisfying, valid } from "$x/semver@v1.4.0/mod.ts";
-import {
-  getPackageQuery,
-  GetPackageQueryResponse,
-  graphQLClient,
-  PackageVersion,
-  prodGraphQLClient,
-} from "../gql/mod.ts";
+import { getPackageQuery, GetPackageQueryResponse, graphQLClient, PackageVersion } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/build.ts";
@@ -226,13 +220,9 @@ async function redirectToCorrectSemver(
     path: string;
   },
 ) {
-  // let packageVersions: PackageVersion[] = [];
-  let hasMore = true;
-  let nextCursor: string | null | undefined;
-  let isMissingStagingPackage = false;
-  let isMissingProdPackage = false;
+  let missing = false;
 
-  async function getStagingPackages(
+  async function getPackages(
     scope: string,
     packageSlug: string,
     first = 25,
@@ -249,7 +239,7 @@ async function redirectToCorrectSemver(
     );
 
     if (!packageQuery.org?.package) {
-      isMissingStagingPackage = true;
+      missing = true;
       return [];
     }
     const { packageVersionConnection } = packageQuery.org.package;
@@ -257,47 +247,13 @@ async function redirectToCorrectSemver(
     const pageInfo = packageVersionConnection.pageInfo;
     if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
 
-    const next = await getStagingPackages(scope, packageSlug, 25, pageInfo.endCursor);
+    const next = await getPackages(scope, packageSlug, 25, pageInfo.endCursor);
 
     return initial.concat(next);
   }
-  const stagingPackageVersions = await getStagingPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
+  const packageVersions = await getPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
 
-  async function getProdPackages(
-    scope: string,
-    packageSlug: string,
-    first = 25,
-    after?: string,
-  ): Promise<PackageVersion[]> {
-    const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
-      getPackageQuery,
-      {
-        orgSlug: scope.replace("@", ""),
-        packageSlug,
-        first,
-        after,
-      },
-    );
-
-    if (!packageQuery.org?.package) {
-      isMissingStagingPackage = true;
-      return [];
-    }
-    const { packageVersionConnection } = packageQuery.org.package;
-    const initial = packageVersionConnection.nodes;
-    const pageInfo = packageVersionConnection.pageInfo;
-    if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
-
-    const next = await getStagingPackages(scope, packageSlug, 25, pageInfo.endCursor);
-
-    return initial.concat(next);
-  }
-  const prodPackageVersions = await getProdPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
-  const packageVersions = stagingPackageVersions.concat(prodPackageVersions);
-
-  const isMissingPackage = isMissingProdPackage && isMissingStagingPackage;
-
-  if (isMissingPackage) {
+  if (missing) {
     response.status = 404;
     response.body = "Package not found";
     logger.error("Oscar::handleImport::missing_package::error");
