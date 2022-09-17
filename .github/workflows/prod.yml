@@ -2,6 +2,12 @@ name: Deploy to Production
 
 on:
   workflow_dispatch:
+    inputs:
+      promote:
+        description: 'auto-promote to production domain?'
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   id-token: write
@@ -35,11 +41,12 @@ jobs:
           DEPLOY_ID: ${{ steps.deploy.outputs.deployment-id }}
       
       - name: Promote to production
+        if: ${{ inputs.promote }}
         run: |
           curl -X PATCH \
           -d '{ "productionDeployment": "${{ steps.deploy.outputs.deployment-id }}" }' \
           -H "Authorization: Bearer ${{ secrets.DENO_DEPLOY_TOKEN }}" \
-          https://dash.deno.com/api/projects/${{ secrets.STAGING_PROJECT_ID }}
+          https://dash.deno.com/api/projects/${{ secrets.PROJECT_ID }}
 
 
         
