@@ -1,0 +1,39 @@
+name: Deno Lint, Format, and Test
+
+on:
+  push:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: testing
+    
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Format
+        run: deno fmt --check
+
+      - name: List
+        run: deno lint
+
+      - name: Test
+        run: deno test -A --unstable ./tests/index.ts
+        env:
+          GRAPHQL_ENDPOINT: ${{ secrets.GRAPHQL_ENDPOINT }}
+          GRAPHQL_TOKEN: ${{ secrets.GRAPHQL_TOKEN }}
+          GOOGLE_CLOUD_BUCKET: ${{ secrets.GOOGLE_CLOUD_BUCKET }}
+          GOOGLE_PRIVATE_KEY_JSON: ${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}
+
+
+        

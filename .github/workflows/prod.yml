@@ -1,0 +1,45 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:  
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v3
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+
+      - name: Deploy
+        id: deploy
+        uses: denoland/deployctl@v1
+        with:
+          project: ${{ secrets.PROJECT_SLUG }}
+          entrypoint: ./src/index.ts
+          import-map: ./import_map.json
+
+      - name: Echo Deploy Id Output
+        run: "echo Deploy Id: $DEPLOY_ID"
+        env:
+          DEPLOY_ID: ${{ steps.deploy.outputs.deployment-id }}
+      
+      - name: Promote to production
+        run: |
+          curl -X PATCH \
+          -d '{ "productionDeployment": "${{ steps.deploy.outputs.deployment-id }}" }' \
+          -H "Authorization: Bearer ${{ secrets.DENO_DEPLOY_TOKEN }}" \
+          https://dash.deno.com/api/projects/${{ secrets.STAGING_PROJECT_ID }}
+
+
+        
