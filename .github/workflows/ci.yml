@@ -67,7 +67,7 @@ jobs:
           import-map: ./import_map.json
       
       - name: Promote to production
-        if: ${{ (github.event === 'workflow_dispatch' && inputs.promote) || true }}
+        if: ${{ (github.event == 'workflow_dispatch' && inputs.promote) || true }}
         run: |
           curl -X PATCH \
           -d '{ "productionDeployment": "${{ steps.deploy.outputs.deployment-id }}" }' \
