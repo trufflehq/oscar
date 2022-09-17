@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   test:
+    name: Test, format and lint
     runs-on: ubuntu-latest
     environment: testing
     
@@ -32,7 +33,7 @@ jobs:
       - name: Format
         run: deno fmt --check
 
-      - name: List
+      - name: Lint
         run: deno lint
 
       - name: Test
@@ -66,7 +67,7 @@ jobs:
           entrypoint: ./src/index.ts
           import-map: ./import_map.json
       
-      - name: Promote to production
+      - name: Promote to staging domain
         if: ${{ (github.event == 'workflow_dispatch' && inputs.promote) || true }}
         run: |
           curl -X PATCH \

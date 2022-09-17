@@ -34,13 +34,8 @@ jobs:
           project: ${{ secrets.PROJECT_SLUG }}
           entrypoint: ./src/index.ts
           import-map: ./import_map.json
-
-      - name: Echo Deploy Id Output
-        run: "echo Deploy Id: $DEPLOY_ID"
-        env:
-          DEPLOY_ID: ${{ steps.deploy.outputs.deployment-id }}
       
-      - name: Promote to production
+      - name: Promote to production domain
         if: ${{ inputs.promote }}
         run: |
           curl -X PATCH \
