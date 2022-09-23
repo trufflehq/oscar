@@ -8,7 +8,7 @@ import {
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 // @deno-types="$fuse/fuse.d.ts"
 import Fuse from "$fuse/fuse.esm.js";
-import { major, maxSatisfying, satisfies, valid } from "$x/semver@v1.4.0/mod.ts";
+import { major, maxSatisfying, satisfies, valid } from "$deps";
 import * as log from "../util/logger.ts";
 const logger = log.getLogger("isense");
 

@@ -1,0 +1,7 @@
+services:
+  oscar:
+    build: .
+    ports:
+      - "2318:2318"
+    env_file:
+      - .env

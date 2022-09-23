@@ -1,0 +1,8 @@
+.github
+.vscode
+tests
+.gitignore
+.gitattributes
+.env.example
+README.md
+LICENSE

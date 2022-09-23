@@ -3,18 +3,7 @@ name: Run tests and deploy to staging
 on:
   push:
     branches: ['main']
-  workflow_dispatch:
-    inputs:
-      promote:
-        description: 'auto-promote to staging domain?'
-        required: true
-        default: true
-        type: boolean
-
-permissions:
-  id-token: write
-  contents: read
-
+  
 jobs:
   test:
     name: Test, format and lint
@@ -44,36 +33,29 @@ jobs:
           GOOGLE_CLOUD_BUCKET: ${{ secrets.GOOGLE_CLOUD_BUCKET }}
           GOOGLE_PRIVATE_KEY_JSON: ${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}
       
-  deploy_staging:
-    needs: [test]
+  build:
+    name: Build Google Cloud Image
     runs-on: ubuntu-latest
-    name: 'Deploy Staging'
-    environment: staging
-
+    environment: testing
     steps:
-      - name: Setup repo
+      - name: Setup Repo
         uses: actions/checkout@v3
 
-      - name: Setup Deno
-        uses: denoland/setup-deno@v1
-        with:
-          deno-version: v1.x
-
-      - name: Deploy
-        id: deploy
-        uses: denoland/deployctl@v1
-        with:
-          project: ${{ secrets.PROJECT_SLUG }}
-          entrypoint: ./src/index.ts
-          import-map: ./import_map.json
-      
-      - name: Promote to staging domain
-        if: ${{ (github.event == 'workflow_dispatch' && inputs.promote) || true }}
+      - name: Generate build ID
+        id: build_id
         run: |
-          curl -X PATCH \
-          -d '{ "productionDeployment": "${{ steps.deploy.outputs.deployment-id }}" }' \
-          -H "Authorization: Bearer ${{ secrets.DENO_DEPLOY_TOKEN }}" \
-          https://dash.deno.com/api/projects/${{ secrets.PROJECT_ID }} \
+          branch=${GITHUB_REF##*/}
+          sha=${GITHUB_SHA::8}
+          ts=$(date +%s)
+          echo "::set-output name=BUILD_ID::${branch}-${sha}-${ts}"
+
+      - uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: _json_key
+          password: "${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}"
+          registry: gcr.io
+          image_name: oscar
+          image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
 
 
         
