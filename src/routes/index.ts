@@ -1,11 +1,8 @@
-import { parse, ParsedPath } from "$std/path/mod.ts";
-import { bundle as bundleEmit } from "$x/emit@0.9.0/mod.ts";
-import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
-import { clean, maxSatisfying, valid } from "$x/semver@v1.4.0/mod.ts";
+import { bundleEmit, clean, maxSatisfying, OakResponse, parse, ParsedPath, valid } from "$deps";
 import { getPackageQuery, GetPackageQueryResponse, graphQLClient, PackageVersion } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
-import { buildJavascript } from "../util/build.ts";
+import { buildJavascript, bundleLoader } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
@@ -54,7 +51,7 @@ export class RootController extends Controller<"/"> {
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
 
-    logger.debug(exists, "Oscar::bundle::exists");
+    logger.debug(exists.statusText, "Oscar::bundle::HEAD");
     if (exists.status === 200) {
       logger.debug("within 200");
       response.status = 200;
@@ -63,7 +60,10 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
-    const bundled = await bundleEmit(new URL(fileURL));
+    const bundled = await bundleEmit(new URL(fileURL), {
+      load: bundleLoader,
+      cacheSetting: "reloadAll",
+    });
 
     logger.debug(
       `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,

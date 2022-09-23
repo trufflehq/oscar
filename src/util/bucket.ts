@@ -1,4 +1,4 @@
-import { GoogleAuth } from "https://deno.land/x/google_api@v1.0/google_auth.ts";
+import { GoogleAuth } from "$deps";
 
 export interface GooglePrivateKey {
   type: string;

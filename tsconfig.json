@@ -1,6 +1,7 @@
 {
   "compileOnSave": true,
   "compilerOptions": {
+    "baseUrl": ".",
     "alwaysStrict": true,
     "allowJs": false,
     "esModuleInterop": true,
@@ -13,6 +14,9 @@
     "strict": true,
     "noUnusedLocals": true,
     "target": "esnext",
-    "useDefineForClassFields": true
+    "useDefineForClassFields": true,
+    "paths": {
+      "#deps": "./deps.ts",
+    }
   }
 }

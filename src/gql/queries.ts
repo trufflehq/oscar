@@ -1,5 +1,3 @@
-// import { gql } from "$x/graphql_request@v4.1.0/mod.ts";
-
 type UUID = string;
 
 interface BaseGraphQLResponse {

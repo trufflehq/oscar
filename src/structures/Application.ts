@@ -1,8 +1,4 @@
-import { Application } from "$x/oak@v10.6.0/mod.ts";
-import logger from "$x/oak_logger@1.0.0/mod.ts";
-import { bgGreen, bold } from "$std/fmt/colors.ts";
-import { format } from "$std/datetime/mod.ts";
-import { cyan, green, red, yellow } from "$std/fmt/colors.ts";
+import { Application, bgGreen, bold, cyan, format, green, oakLogger, red, yellow } from "$deps";
 
 export class OscarApplication extends Application {
   public readonly app = new Application();
@@ -10,7 +6,7 @@ export class OscarApplication extends Application {
   public constructor() {
     super();
 
-    this.app.use(logger.logger);
+    this.app.use(oakLogger.default.logger);
 
     this.app.use(async ({ request, response }, next) => {
       await next();
