@@ -57,5 +57,27 @@ jobs:
           image_name: oscar
           image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
 
+  build-and-push-staging-to-gcr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Github Checkout
+        uses: actions/checkout@v2
+
+      - name: Generate build ID
+        id: build_id
+        run: |
+          sha=${GITHUB_SHA::8}
+          ts=$(date +%s)
+          echo "::set-output name=BUILD_ID::staging-${sha}-${ts}"
+
+      - uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: _json_key
+          password: "${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}"
+          registry: gcr.io
+          image_name: oscar
+          image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
+
+
 
         
