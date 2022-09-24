@@ -58,7 +58,7 @@ export class RootController extends Controller<"/"> {
     logger.info(cacheURL, "Oscar::bundle::cache_check");
 
     // checking if the cached file exists
-    const exists = await fetch(cacheURL, { method: "HEAD" });
+    const exists = { statusText: '', status: 404 }; //  await fetch(cacheURL, { method: "HEAD" });
 
     logger.debug(exists.statusText, "Oscar::bundle::HEAD");
     if (exists.status === 200) {
@@ -98,14 +98,22 @@ export class RootController extends Controller<"/"> {
           }));
 
           build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
-            const contents = await fetch(args.path, {
+            const contents = (await fetch(args.path, {
               headers: {
                 // we want whatever we're importing to think we're a browser.
                 // eg so esm.sh doesn't add Deno vars to the code
                 "User-Agent": BROWSER_USER_AGENT,
               },
             })
-              .then((r) => r.text());
+              .then((r) => r.text()))
+              // some of our existing files rely on import.meta.url for importing some
+              // other file (eg css files), or for naming our web components (distribute pkg)
+              // HACK/NOTE: there's a chance this breaks things depending on how other libs use
+              // import.meta.url. we may need to figure out a different solution.
+              // we could also change this up to replace `new URL(path, base)` with the 
+              // computed url at compile time. or be smarter about detecting import.meta.url
+              .replaceAll('import.meta.url', `'${args.path}'`);
+
             return {
               contents,
               loader: "tsx",
@@ -121,12 +129,12 @@ export class RootController extends Controller<"/"> {
       "Oscar::bundle:upload_file",
     );
 
-    await uploadFile(
-      scope,
-      `${parsedPackage}@${semver}`,
-      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-      bundled.outputFiles[0].text,
-    );
+    // await uploadFile(
+    //   scope,
+    //   `${parsedPackage}@${semver}`,
+    //   `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+    //   bundled.outputFiles[0].text,
+    // );
 
     response.status = 200;
     response.body = bundled.outputFiles[0].text;
