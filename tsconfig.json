@@ -9,14 +9,10 @@
     "inlineSourceMap": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["deno.window"],
     "module": "esnext",
     "strict": true,
     "noUnusedLocals": true,
     "target": "esnext",
-    "useDefineForClassFields": true,
-    "paths": {
-      "#deps": "./deps.ts"
-    }
+    "useDefineForClassFields": true
   }
 }
