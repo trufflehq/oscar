@@ -77,7 +77,7 @@ export class RootController extends Controller<"/"> {
       external: [
         "react",
         "react-dom",
-        "rxjs"
+        "rxjs",
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
         "@truffle/api", // for same urql react context
