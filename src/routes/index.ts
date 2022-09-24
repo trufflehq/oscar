@@ -4,6 +4,7 @@ import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript, bundleLoader } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
+import { transform } from "$x/swc@0.2.1/mod.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
@@ -66,9 +67,19 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
-    const bundled = await bundleEmit(new URL(fileURL), {
+    const _bundled = await bundleEmit(new URL(fileURL), {
       load: bundleLoader,
       cacheSetting: "reloadAll",
+      compilerOptions: {
+        "sourceMap": false,
+      },
+    });
+
+    const { code: bundled } = transform(_bundled.code, {
+      minify: true,
+      jsc: {
+        minify: { compress: true, mangle: true },
+      },
     });
 
     logger.debug(
@@ -80,11 +91,11 @@ export class RootController extends Controller<"/"> {
       scope,
       `${parsedPackage}@${semver}`,
       `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-      bundled.code,
+      bundled,
     );
 
     response.status = 200;
-    response.body = bundled.code;
+    response.body = bundled;
     response.headers.append("Content-Type", "text/javascript");
     return;
   }
