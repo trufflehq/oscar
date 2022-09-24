@@ -74,7 +74,10 @@ export class RootController extends Controller<"/"> {
       platform: "browser",
       bundle: true,
       jsx: "transform",
-      external: ["require", "fs", "path", "react", "react-dom", "prop-types"],
+      external: [
+        "react",
+        "react-dom",
+      ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
         sourcefile: fileURL,
@@ -85,17 +88,35 @@ export class RootController extends Controller<"/"> {
       plugins: [{
         name: "oscar",
         setup: (build) => {
-          build.onResolve({ filter: /^https?:\/\// }, (args) => ({
-            path: args.path,
-            namespace: "http-url",
-          }));
+          build.onResolve({ filter: /^https?:\/\// }, (args) => {
+            const isExternal = getIsExternal({
+              externals: build.initialOptions.external || [],
+              path: args.path,
+              base: "https://npm.tfl.dev",
+            });
+
+            return {
+              path: args.path,
+              external: isExternal,
+              namespace: "http-url",
+            };
+          });
 
           // We also want to intercept all **relative** import paths inside downloaded
           // files and resolve them against the original URL
-          build.onResolve({ filter: /^\.|\// }, (args) => ({
-            path: new URL(args.path, args.importer || fileURL).toString(),
-            namespace: "http-url",
-          }));
+          build.onResolve({ filter: /^\.|\// }, (args) => {
+            const isExternal = getIsExternal({
+              externals: build.initialOptions.external || [],
+              path: args.path,
+            });
+
+            return {
+              // build full url from relative path
+              path: new URL(args.path, args.importer || fileURL).toString(),
+              external: isExternal,
+              namespace: "http-url",
+            };
+          });
 
           build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
             const contents = (await fetch(args.path, {
@@ -110,9 +131,9 @@ export class RootController extends Controller<"/"> {
               // other file (eg css files), or for naming our web components (distribute pkg)
               // HACK/NOTE: there's a chance this breaks things depending on how other libs use
               // import.meta.url. we may need to figure out a different solution.
-              // we could also change this up to replace `new URL(path, base)` with the 
+              // we could also change this up to replace `new URL(path, base)` with the
               // computed url at compile time. or be smarter about detecting import.meta.url
-              .replaceAll('import.meta.url', `'${args.path}'`);
+              .replaceAll("import.meta.url", `'${args.path}'`);
 
             return {
               contents,
@@ -268,6 +289,23 @@ export class RootController extends Controller<"/"> {
     response.headers.append("Content-Type", "text/javascript");
     return;
   }
+}
+
+// detect anything we want externalized, as urls
+function getIsExternal(
+  { path, externals, base = "" }: {
+    path: string;
+    externals: string[];
+    base?: string;
+  },
+  ) {
+  // TODO: may better method of detecting these?
+  const isExternal = Boolean(externals.find((external) => {
+    const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@)`);
+    return path.match(regex);
+  }));
+
+  return isExternal;
 }
 
 async function redirectToCorrectSemver(
