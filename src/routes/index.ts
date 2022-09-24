@@ -77,6 +77,7 @@ export class RootController extends Controller<"/"> {
       external: [
         "react",
         "react-dom",
+        "@truffle/global-context",
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
@@ -92,7 +93,7 @@ export class RootController extends Controller<"/"> {
             const isExternal = getIsExternal({
               externals: build.initialOptions.external || [],
               path: args.path,
-              base: "https://npm.tfl.dev",
+              bases: ["https://npm.tfl.dev", "https://tfl.dev", "https://staging.tfl.dev"],
             });
 
             return {
@@ -293,19 +294,19 @@ export class RootController extends Controller<"/"> {
 
 // detect anything we want externalized, as urls
 function getIsExternal(
-  { path, externals, base = "" }: {
+  { path, externals, bases = [""] }: {
     path: string;
     externals: string[];
-    base?: string;
+    bases?: string[];
   },
-  ) {
+): boolean {
   // TODO: may better method of detecting these?
-  const isExternal = Boolean(externals.find((external) => {
-    const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@)`);
-    return path.match(regex);
+  return Boolean(externals.find((external) => {
+    return bases.find((base) => {
+      const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@)`);
+      return path.match(regex);
+    }) != null; // bases = '' is falsey
   }));
-
-  return isExternal;
 }
 
 async function redirectToCorrectSemver(
