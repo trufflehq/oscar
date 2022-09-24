@@ -79,6 +79,7 @@ export class RootController extends Controller<"/"> {
         "react-dom",
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
+        "@truffle/api", // for same urql react context
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
