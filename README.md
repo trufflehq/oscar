@@ -5,7 +5,10 @@
 </div>
 
 ## About
-Oscar is Truffle's proprietary JavaScript and TypeScript package server. It connects with existing Truffle Developer Platform architecture to:
+
+Oscar is Truffle's proprietary JavaScript and TypeScript package server. It connects with existing Truffle Developer
+Platform architecture to:
+
 - Serve TypeScript files in [Deno](https://deno.land)
 - Serve compiled JavaScript in [Node v18](https://nodejs.org/api/esm.html#https-and-http-imports)
 - Serve compiled JavaScript in the browser (see: [`trufflehq/mogul-menu`](https://github.com/trufflehq/mogul-menu))
