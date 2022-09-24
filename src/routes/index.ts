@@ -1,10 +1,10 @@
-import { bundleEmit, clean, maxSatisfying, OakResponse, parse, ParsedPath, valid } from "$deps";
+import { clean, maxSatisfying, OakResponse, parse, ParsedPath, valid } from "$deps";
+import { build, transform } from "$x/esbuild/mod.js";
 import { getPackageQuery, GetPackageQueryResponse, graphQLClient, PackageVersion } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
-import { buildJavascript, bundleLoader } from "../util/build.ts";
+import { buildJavascript } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
-import { transform } from "$x/swc@0.2.1/mod.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
@@ -67,35 +67,75 @@ export class RootController extends Controller<"/"> {
       return;
     }
 
-    const _bundled = await bundleEmit(new URL(fileURL), {
-      load: bundleLoader,
-      cacheSetting: "reloadAll",
-      compilerOptions: {
-        "sourceMap": false,
+    const bundled = await build({
+      format: "esm",
+      platform: "browser",
+      bundle: true,
+      jsx: 'transform',
+      external: ["require", "fs", "path", "react", "react-dom", "prop-types"],
+      stdin: {
+        contents: await fetch(fileURL).then((r) => r.text()),
+        sourcefile: fileURL,
+        loader: "tsx",
       },
-    });
-
-    const { code: bundled } = transform(_bundled.code, {
       minify: true,
-      jsc: {
-        minify: { compress: true, mangle: true },
-      },
+      write: false,
+      plugins: [{
+        name: "oscar",
+        setup: (build) => {
+          build.onResolve({ filter: /^https?:\/\// }, (args) => ({
+            path: args.path,
+            namespace: "http-url",
+          }));
+
+          // We also want to intercept all **relative** import paths inside downloaded
+          // files and resolve them against the original URL
+          build.onResolve({ filter: /^\.|\// }, (args) => ({
+            path: new URL(args.path, args.importer || fileURL).toString(),
+            namespace: 'http-url'
+          }))
+
+          build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
+            const contents = await fetch(args.path).then((r) => r.text());
+            return {
+              contents,
+              loader: "tsx",
+            };
+          });
+        },
+      }],
     });
+    bundled.stop?.();
+
+    // const _bundled = await bundleEmit(new URL(fileURL), {
+    //   load: bundleLoader,
+    //   cacheSetting: "reloadAll",
+    //   compilerOptions: {
+    //     "sourceMap": false,
+    //   },
+    // });
+
+    // const { code: bundled } = transform(_bundled.code, {
+    //   minify: true,
+    //   jsc: {
+    //     minify: { compress: true, mangle: true },
+    //   },
+    // });
 
     logger.debug(
       `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
       "Oscar::bundle:upload_file",
     );
 
-    await uploadFile(
-      scope,
-      `${parsedPackage}@${semver}`,
-      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-      bundled,
-    );
+    // await uploadFile(
+    //   scope,
+    //   `${parsedPackage}@${semver}`,
+    //   `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+    //   bundled,
+    // );
 
     response.status = 200;
-    response.body = bundled;
+    response.body = bundled.outputFiles[0].text;
     response.headers.append("Content-Type", "text/javascript");
     return;
   }
