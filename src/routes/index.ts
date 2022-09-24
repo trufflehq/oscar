@@ -71,10 +71,11 @@ export class RootController extends Controller<"/"> {
       format: "esm",
       platform: "browser",
       bundle: true,
+      jsx: 'transform',
       external: ["require", "fs", "path", "react", "react-dom", "prop-types"],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
-        sourcefile: "index.tsx",
+        sourcefile: fileURL,
         loader: "tsx",
       },
       minify: true,
@@ -87,24 +88,24 @@ export class RootController extends Controller<"/"> {
             namespace: "http-url",
           }));
 
-          build.onResolve({ filter: /.*/, namespace: "http-url" }, (args) => ({
-            path: new URL(args.path, args.importer).toString(),
-            namespace: "http-url",
-          }));
+          // We also want to intercept all **relative** import paths inside downloaded
+          // files and resolve them against the original URL
+          build.onResolve({ filter: /^\.|\// }, (args) => ({
+            path: new URL(args.path, args.importer || fileURL).toString(),
+            namespace: 'http-url'
+          }))
 
           build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
             const contents = await fetch(args.path).then((r) => r.text());
-            return { contents };
+            return {
+              contents,
+              loader: "tsx",
+            };
           });
         },
       }],
     });
     bundled.stop?.();
-
-    const tsfd = await transform(bundled.outputFiles[0].text, {
-      loader: "js",
-      minify: true,
-    });
 
     // const _bundled = await bundleEmit(new URL(fileURL), {
     //   load: bundleLoader,
@@ -134,7 +135,7 @@ export class RootController extends Controller<"/"> {
     // );
 
     response.status = 200;
-    response.body = tsfd.code;
+    response.body = bundled.outputFiles[0].text;
     response.headers.append("Content-Type", "text/javascript");
     return;
   }
