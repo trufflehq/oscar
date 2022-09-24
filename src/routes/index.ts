@@ -8,6 +8,8 @@ import * as logger from "../util/logger.ts";
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
+const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
 const packageRegex = /(?<package>[^@]+)(?:@(?<semver>(?:[~|^|>|>=|<|<=])?[0-9.|x]+|latest))?/;
 
 export class RootController extends Controller<"/"> {
@@ -96,7 +98,14 @@ export class RootController extends Controller<"/"> {
           }));
 
           build.onLoad({ filter: /.*/, namespace: "http-url" }, async (args) => {
-            const contents = await fetch(args.path).then((r) => r.text());
+            const contents = await fetch(args.path, {
+              headers: {
+                // we want whatever we're importing to think we're a browser.
+                // eg so esm.sh doesn't add Deno vars to the code
+                "User-Agent": BROWSER_USER_AGENT,
+              },
+            })
+              .then((r) => r.text());
             return {
               contents,
               loader: "tsx",
