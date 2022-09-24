@@ -16,7 +16,7 @@
     "target": "esnext",
     "useDefineForClassFields": true,
     "paths": {
-      "#deps": "./deps.ts",
+      "#deps": "./deps.ts"
     }
   }
 }
