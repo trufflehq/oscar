@@ -22,6 +22,12 @@ export class RootController extends Controller<"/"> {
       ctx.response.status = 418;
       ctx.response.type = "text/plain";
     });
+
+    this.router.get("/ping", (ctx) => {
+      ctx.response.body = "pong";
+      ctx.response.status = 200;
+      ctx.response.type = "text/plain";
+    });
   }
 
   public headers(response: OakResponse) {
