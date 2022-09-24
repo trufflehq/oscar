@@ -58,10 +58,12 @@ jobs:
           image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
 
   build-and-push-staging-to-gcr:
+    name: Build and push staging to GCR
     runs-on: ubuntu-latest
+    environment: testing
     steps:
       - name: Github Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Generate build ID
         id: build_id
