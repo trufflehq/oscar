@@ -58,7 +58,7 @@ export class RootController extends Controller<"/"> {
     logger.info(cacheURL, "Oscar::bundle::cache_check");
 
     // checking if the cached file exists
-    const exists = { statusText: '', status: 404 }; //  await fetch(cacheURL, { method: "HEAD" });
+    const exists = await fetch(cacheURL, { method: "HEAD" });
 
     logger.debug(exists.statusText, "Oscar::bundle::HEAD");
     if (exists.status === 200) {
@@ -129,12 +129,12 @@ export class RootController extends Controller<"/"> {
       "Oscar::bundle:upload_file",
     );
 
-    // await uploadFile(
-    //   scope,
-    //   `${parsedPackage}@${semver}`,
-    //   `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
-    //   bundled.outputFiles[0].text,
-    // );
+    await uploadFile(
+      scope,
+      `${parsedPackage}@${semver}`,
+      `.cache${parsedPath.dir ? `/${parsedPath.dir}` : ""}/bundle_${parsedPath.name}${parsedPath.ext}`,
+      bundled.outputFiles[0].text,
+    );
 
     response.status = 200;
     response.body = bundled.outputFiles[0].text;
