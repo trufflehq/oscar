@@ -208,7 +208,8 @@ export class RootController extends Controller<"/"> {
     // after calculating through semver
     if (clean(semver!) !== semver) {
       logger.debug(range, "Oscar::handleImport::not_clean");
-      return redirectToCorrectSemver({ response, scope, parsedPackage, range, path });
+      const search = request.url.search
+      return redirectToCorrectSemver({ response, scope, parsedPackage, range, path, search });
     }
     const bundle = typeof request.url.searchParams.get("bundle") === "string";
 
@@ -313,12 +314,13 @@ function getIsExternal(
 }
 
 async function redirectToCorrectSemver(
-  { response, scope, parsedPackage, range, path }: {
+  { response, scope, parsedPackage, range, path, search }: {
     response: OakResponse;
     scope: `@${string}`;
     parsedPackage: string | undefined;
     range: string;
     path: string;
+    search: string;
   },
 ) {
   let missing = false;
@@ -371,5 +373,5 @@ async function redirectToCorrectSemver(
 
   // cache redirects for shorter amount of time
   response.headers.set("Cache-Control", `max-age=${REDIRECT_CACHE_SECONDS}`);
-  return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}`);
+  return response.redirect(`/${scope}/${parsedPackage}@${version}/${path}${search}`);
 }
