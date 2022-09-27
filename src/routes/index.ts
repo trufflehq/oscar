@@ -81,6 +81,7 @@ export class RootController extends Controller<"/"> {
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
         "@truffle/api", // for same urql react context
+        "@truffle/ui", // HACK: figure out why inputs from truffle/ui don't render properly when bundled
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
@@ -208,7 +209,7 @@ export class RootController extends Controller<"/"> {
     // after calculating through semver
     if (clean(semver!) !== semver) {
       logger.debug(range, "Oscar::handleImport::not_clean");
-      const search = request.url.search
+      const search = request.url.search;
       return redirectToCorrectSemver({ response, scope, parsedPackage, range, path, search });
     }
     const bundle = typeof request.url.searchParams.get("bundle") === "string";
