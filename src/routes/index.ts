@@ -81,6 +81,7 @@ export class RootController extends Controller<"/"> {
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
         "@truffle/api", // for same urql react context
+        "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@truffle/ui", // HACK: figure out why inputs from truffle/ui don't render properly when bundled
       ],
       stdin: {
