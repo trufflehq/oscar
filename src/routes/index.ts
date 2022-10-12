@@ -83,7 +83,7 @@ export class RootController extends Controller<"/"> {
         "@truffle/api", // for same urql react context
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@truffle/ui", // HACK: figure out why inputs from truffle/ui don't render properly when bundled
-        // "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
+        "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
