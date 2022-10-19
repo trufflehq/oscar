@@ -1,10 +1,21 @@
-import { clean, maxSatisfying, OakResponse, parse, ParsedPath, valid } from "$deps";
+import { parse, type ParsedPath } from "$std/path/mod.ts";
+import { maxSatisfying, parse as parseSemver, valid } from "$std/semver/mod.ts";
 import { build } from "$x/esbuild@v0.15.9/mod.js";
+import { Response as OakResponse } from "$x/oak@v10.6.0/response.ts";
 import { getPackageQuery, GetPackageQueryResponse, graphQLClient, PackageVersion } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
+
+function clean(
+  version: string,
+): string | null {
+  const s = parseSemver(
+    version.trim().replace(/^[=v]+/, ""),
+  );
+  return s ? s.version : null;
+}
 
 const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days

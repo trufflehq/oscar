@@ -1,4 +1,7 @@
-import { Application, bgGreen, bold, cyan, format, green, oakLogger, red, yellow } from "$deps";
+import { format } from "$std/datetime/mod.ts";
+import { bgGreen, bold, cyan, green, red, yellow } from "$std/fmt/colors.ts";
+import { Application } from "$x/oak@v10.6.0/mod.ts";
+import * as oakLogger from "$x/oak_logger@1.0.0/mod.ts";
 
 export class OscarApplication extends Application {
   public readonly app = new Application();

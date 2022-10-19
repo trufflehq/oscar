@@ -1,4 +1,5 @@
-import { type LoadResponse, transform } from "$deps";
+import { type LoadResponse } from "$x/deno_graph@0.26.0/mod.ts";
+import { transform } from "$x/swc@0.2.1/mod.ts";
 import * as logger from "./logger.ts";
 
 export function buildJavascript(contents: string) {

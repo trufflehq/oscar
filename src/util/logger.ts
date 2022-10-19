@@ -1,5 +1,7 @@
 export * from "$std/log/mod.ts";
-import { cyan, format, green, handlers, LogLevels, magenta, red, setup, yellow } from "$deps";
+import { format } from "$std/datetime/mod.ts";
+import { cyan, green, magenta, red, yellow } from "$std/fmt/colors.ts";
+import { handlers, LogLevels, setup } from "$std/log/mod.ts";
 
 const color = (level: LogLevels) => {
   switch (level) {

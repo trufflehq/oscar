@@ -1,4 +1,4 @@
-import { RouteParams, Router, RouterContext } from "$deps";
+import { type RouteParams, Router, type RouterContext } from "$x/oak@v10.6.0/mod.ts";
 import { OscarApplication } from "./Application.ts";
 
 export type OscarContext<P extends string> = RouterContext<P, RouteParams<P>>;

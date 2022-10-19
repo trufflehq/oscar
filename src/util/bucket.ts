@@ -1,4 +1,4 @@
-import { GoogleAuth } from "$deps";
+import { GoogleAuth } from "$x/google_api@v1.0/google_auth.ts";
 
 export interface GooglePrivateKey {
   type: string;

@@ -6,9 +6,9 @@ import {
   ListOrgPackagesQueryResponse,
 } from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
-// @deno-types="$fuse/fuse.d.ts"
-import Fuse from "$fuse/fuse.esm.js";
-import { major, maxSatisfying, satisfies, valid } from "$deps";
+// @deno-types="$x/fuse@v6.4.1/dist/fuse.d.ts"
+import Fuse from "$x/fuse@v6.4.1/dist/fuse.esm.js";
+import { major, maxSatisfying, satisfies, valid } from "$std/semver/mod.ts";
 import * as log from "../util/logger.ts";
 const logger = log.getLogger("isense");
 
