@@ -209,6 +209,19 @@ export class RootController extends Controller<"/"> {
 
     // redirect to the exact version
     // after calculating through semver
+
+    // FIXME:
+
+    // if exact version and no .file suffix, return js:
+    //  export * from "full url with .file suffix"
+    //  export { default } from "full url with .file suffix"
+    // PROBLEM: a js error will be thrown if default isn't exported, and potentially if there are no exports for *
+
+    // if exact version and .file suffix, return actual file
+
+    // this will make it so we're not loading duplicate "reqs" of the same url
+    // (browser seems to treat each individual request as its own module, so react context isn't shared)
+
     if (clean(semver!) !== semver) {
       logger.debug(range, "Oscar::handleImport::not_clean");
       const search = request.url.search;
