@@ -6,7 +6,7 @@ import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
 
-const REDIRECT_CACHE_SECONDS = 3600 * 1; // 1 hour
+const REDIRECT_CACHE_SECONDS = 60 * 5; // 5 minutes
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
 const BROWSER_USER_AGENT =
   "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
