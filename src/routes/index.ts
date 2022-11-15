@@ -347,7 +347,7 @@ async function redirectToCorrectSemver(
     first = 25,
     after?: string,
   ): Promise<PackageVersion[]> {
-    logger.debug("Oscar::handleImport::redirect::version1", version);
+    logger.debug("Oscar::handleImport::redirect::version1", packageSlug);
     const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
       getPackageQuery,
       {
@@ -357,7 +357,7 @@ async function redirectToCorrectSemver(
         after,
       },
     );
-    logger.debug("Oscar::handleImport::redirect::version2", version);
+    logger.debug("Oscar::handleImport::redirect::version2", packageSlug);
 
     if (!packageQuery.org?.package) {
       missing = true;
@@ -369,7 +369,7 @@ async function redirectToCorrectSemver(
     if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
 
     const next = await getPackages(scope, packageSlug, 25, pageInfo.endCursor);
-    logger.debug("Oscar::handleImport::redirect::version3", version);
+    logger.debug("Oscar::handleImport::redirect::version3", packageSlug);
 
     return initial.concat(next);
   }
