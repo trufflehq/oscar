@@ -381,6 +381,14 @@ async function redirectToCorrectSemver(
 
   const version = maxSatisfying(versions.map((v) => v.version), range);
 
+  if (!version) {
+    response.status = 404;
+    response.body = "Package version not found";
+    logger.error("Oscar::handleImport::missing_package_version::error");
+    logger.debug(packageVersions);
+    return;
+  }
+
   logger.debug("Oscar::handleImport::redirect::version", version);
 
   // cache redirects for shorter amount of time
