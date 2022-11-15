@@ -344,10 +344,11 @@ async function redirectToCorrectSemver(
   async function getPackages(
     scope: string,
     packageSlug: string,
-    first = 25,
+    // get all - don't have a better way other than pagination.
+    // don't need pagination since we want all and overall req is small kb
+    first = 99999,
     after?: string,
   ): Promise<PackageVersion[]> {
-    logger.debug("Oscar::handleImport::redirect::version1", packageSlug);
     const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
       getPackageQuery,
       {
@@ -357,21 +358,13 @@ async function redirectToCorrectSemver(
         after,
       },
     );
-    logger.debug("Oscar::handleImport::redirect::version2", packageSlug);
 
     if (!packageQuery.org?.package) {
       missing = true;
       return [];
     }
     const { packageVersionConnection } = packageQuery.org.package;
-    const initial = packageVersionConnection.nodes;
-    const pageInfo = packageVersionConnection.pageInfo;
-    if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
-
-    const next = await getPackages(scope, packageSlug, 25, pageInfo.endCursor);
-    logger.debug("Oscar::handleImport::redirect::version3", packageSlug);
-
-    return initial.concat(next);
+    return packageVersionConnection.nodes;
   }
   const packageVersions = await getPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
 
@@ -385,8 +378,6 @@ async function redirectToCorrectSemver(
   const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
     (v) => ({ version: v.semver, satisfies: false }),
   ).filter(({ version }) => valid(version) !== null);
-
-  logger.debug("Oscar::handleImport::redirect::version5");
 
   const version = maxSatisfying(versions.map((v) => v.version), range);
 

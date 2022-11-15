@@ -4,16 +4,7 @@ interface BaseGraphQLResponse {
   extensions: Record<"components", unknown>;
 }
 
-type PageInfo = {
-  endCursor: string | null;
-  hasNextPage: boolean;
-  startCursor: string | null;
-  hasPreviousPage: boolean;
-};
-
 export type PackageVersion = {
-  id: UUID;
-  packageId: UUID;
   semver: string;
   moduleConnection: {
     nodes: { filename: `/${string}`; code: string }[];
@@ -21,7 +12,6 @@ export type PackageVersion = {
 };
 
 type PackageVersionConnection = {
-  pageInfo: PageInfo;
   nodes: PackageVersion[];
 };
 
@@ -44,22 +34,8 @@ export const getPackageQuery = `
 				name
 				slug
 				packageVersionConnection(first: $first, after: $after) {
-					pageInfo {
-						endCursor
-						hasNextPage
-						startCursor
-						hasPreviousPage
-					}
 					nodes {
-						id
-						packageId
 						semver
-						moduleConnection {
-							nodes {
-								filename
-								code
-							}
-						}
 					}
 				}
 			}
