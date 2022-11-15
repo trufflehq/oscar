@@ -366,7 +366,7 @@ async function redirectToCorrectSemver(
     const { packageVersionConnection } = packageQuery.org.package;
     return packageVersionConnection.nodes;
   }
-  const packageVersions = await getPackages(scope.replace("@", ""), parsedPackage!, 25, undefined);
+  const packageVersions = await getPackages(scope.replace("@", ""), parsedPackage!, 99999, undefined);
 
   if (missing) {
     response.status = 404;
