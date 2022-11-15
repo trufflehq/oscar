@@ -60,7 +60,7 @@ export class RootController extends Controller<"/"> {
     // checking if the cached file exists
     const exists = await fetch(cacheURL, { method: "HEAD" });
 
-    logger.debug(exists.status, typeof exists.status, exists.statusText, "Oscar::bundle::HEAD");
+    logger.debug(exists.statusText, "Oscar::bundle::HEAD");
     if (exists.status === 200) {
       logger.debug("within 200");
       response.status = 200;
@@ -347,6 +347,7 @@ async function redirectToCorrectSemver(
     first = 25,
     after?: string,
   ): Promise<PackageVersion[]> {
+    logger.debug("Oscar::handleImport::redirect::version1", version);
     const packageQuery = await graphQLClient.request<GetPackageQueryResponse>(
       getPackageQuery,
       {
@@ -356,6 +357,7 @@ async function redirectToCorrectSemver(
         after,
       },
     );
+    logger.debug("Oscar::handleImport::redirect::version2", version);
 
     if (!packageQuery.org?.package) {
       missing = true;
@@ -367,6 +369,7 @@ async function redirectToCorrectSemver(
     if (!pageInfo.endCursor || !pageInfo.hasNextPage) return initial;
 
     const next = await getPackages(scope, packageSlug, 25, pageInfo.endCursor);
+    logger.debug("Oscar::handleImport::redirect::version3", version);
 
     return initial.concat(next);
   }
@@ -382,6 +385,8 @@ async function redirectToCorrectSemver(
   const versions: { version: string; satisfies: boolean }[] = packageVersions.map(
     (v) => ({ version: v.semver, satisfies: false }),
   ).filter(({ version }) => valid(version) !== null);
+
+  logger.debug("Oscar::handleImport::redirect::version5");
 
   const version = maxSatisfying(versions.map((v) => v.version), range);
 
