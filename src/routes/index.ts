@@ -6,16 +6,6 @@ import { auth, craftFileURL, uploadFile } from "../util/bucket.ts";
 import { buildJavascript } from "../util/build.ts";
 import * as logger from "../util/logger.ts";
 
-// TODO: we want to use userAgent from headers to get a target (es2015, es2022, etc...)
-// https://github.com/trufflehq/esm.sh/blob/master/server/compat.go#L162
-// and we need to store store cache for each different target
-
-// we also want the intial import (eg tfl.dev/@truffle/api@0.1.0/client.ts)
-// to be a simple file like https://esm.sh/antd@4.23.1 that points at the correct target
-// (this will also fix issue that browsers treat 302'd urls as completely different files from the 200 it 302's to)
-
-// for now we'll pin esm.sh and oscar at es2015
-
 const REDIRECT_CACHE_SECONDS = 60 * 5; // 5 minutes
 const FILE_CACHE_SECONDS = 3600 * 24 * 8; // 8 days
 const BROWSER_USER_AGENT =
@@ -84,8 +74,6 @@ export class RootController extends Controller<"/"> {
       platform: "browser",
       bundle: true,
       jsx: "transform",
-      // FIXME: rm when oscar supports multiple targets
-      target: ["es2015"],
       external: [
         "react",
         "react-dom",
@@ -142,7 +130,6 @@ export class RootController extends Controller<"/"> {
               headers: {
                 // we want whatever we're importing to think we're a browser.
                 // eg so esm.sh doesn't add Deno vars to the code
-                // FIXME: use request userAgent when oscar supports multiple targets
                 "User-Agent": BROWSER_USER_AGENT,
               },
             })
