@@ -4,7 +4,7 @@ import * as logger from "./logger.ts";
 export function buildJavascript(contents: string) {
   const result = transform(contents, {
     jsc: {
-      target: "es2020",
+      target: "es2015",
       parser: {
         syntax: "typescript",
         tsx: true,
