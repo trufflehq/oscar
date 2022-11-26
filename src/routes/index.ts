@@ -240,6 +240,7 @@ export class RootController extends Controller<"/"> {
 
     logger.debug(fileURL, "Oscar::riley::fileUrlDebug");
 
+    // NOTE: Deno in user-agent will also bypass cloudflare cache
     if (request.headers.get("User-Agent")?.toLowerCase().includes("deno")) {
       response.status = 200;
       response.body = await fetch(fileURL).then((r) => r.arrayBuffer());
