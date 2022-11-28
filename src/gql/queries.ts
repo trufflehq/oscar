@@ -27,13 +27,13 @@ export interface GetPackageQueryResponse extends BaseGraphQLResponse {
 }
 
 export const getPackageQuery = `
-	query GetPackage($orgSlug: String!, $packageSlug: String!, $first: Int, $after: String) {
+	query GetPackage($orgSlug: String!, $packageSlug: String!, $status: String, $first: Int, $after: String) {
 		org(input: { slug: $orgSlug }) {
 			package(slug: $packageSlug) {
 				id
 				name
 				slug
-				packageVersionConnection(first: $first, after: $after) {
+				packageVersionConnection(input: { status: $status }, first: $first, after: $after) {
 					nodes {
 						semver
 					}
