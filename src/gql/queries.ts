@@ -29,7 +29,7 @@ export interface GetPackageQueryResponse extends BaseGraphQLResponse {
 export const getPackageQuery = `
 	query GetPackage($orgSlug: String!, $packageSlug: String!, $status: String, $first: Int, $after: String) {
 		org(input: { slug: $orgSlug }) {
-			package(slug: $packageSlug) {
+			package(input: { slug: $packageSlug }) {
 				id
 				name
 				slug
