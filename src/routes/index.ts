@@ -355,6 +355,7 @@ async function redirectToCorrectSemver(
       {
         orgSlug: scope.replace("@", ""),
         packageSlug,
+        status: "published",
         first,
         after,
       },
