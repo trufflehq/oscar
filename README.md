@@ -2,10 +2,10 @@
 This version of Oscar serves your local files, instead of from our Google Cloud bucket. Version numbers will be ignored.
 
 ## Confguration
-> **Warning** Dont skip this section!  
+> **Warning**: Don't skip this section!  
 
 Because we all have different fs formats, you'll have to manually define all the packages and their paths.
-Luckily, all the packages from `truffle-packages` are defined, you'll just have to update the path to your `truffle-packages` folder.
+Luckily, all the packages from `truffle-packages` are defined, you'll just have to update the path to your `truffle-packages` folder. Do so in `<root>/packages.ts`.
 
 ## Usage
 1. Start Oscar with `deno task dev`
