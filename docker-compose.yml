@@ -1,7 +1,11 @@
+version: '3.7'
+
 services:
-  oscar:
-    build: .
+  nginx:
+    build: 
+      context: nginx
+    network_mode: host
     ports:
-      - "2318:2318"
-    env_file:
-      - .env
+      - 80:80
+    expose:
+      - 80

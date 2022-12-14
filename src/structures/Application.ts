@@ -45,7 +45,9 @@ export class OscarApplication extends Application {
   }
 
   public start() {
-    return this.app.listen({ port: 2318 });
+    return this.app.listen({
+      port: 2318,
+    });
   }
 
   public init(): void {

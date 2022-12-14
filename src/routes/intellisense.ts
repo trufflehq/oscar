@@ -1,15 +1,9 @@
-import {
-  getPackageQuery,
-  GetPackageQueryResponse,
-  graphQLClient,
-  listOrgPackagesQuery,
-  ListOrgPackagesQueryResponse,
-} from "../gql/mod.ts";
 import { Controller, OscarApplication, OscarContext } from "../structures/mod.ts";
 // @deno-types="$fuse/fuse.d.ts"
 import Fuse from "$fuse/fuse.esm.js";
-import { major, maxSatisfying, satisfies, valid } from "$deps";
 import * as log from "../util/logger.ts";
+import packages from "../../packages.ts";
+import { walk } from "$std/fs/walk.ts";
 const logger = log.getLogger("isense");
 
 export class IntellisenseController extends Controller<"/"> {
@@ -73,63 +67,44 @@ export class IntellisenseController extends Controller<"/"> {
     context.response.headers.append("Content-Type", "application/vnd.deno.reg.v2+json");
   }
 
+  private packagesFromScope(scope: string): string[] {
+    return packages.filter((p) => p.scope === scope).map((p) => p.name);
+  }
+
   /**
    * Fetches the README for a package
    * @param context
    */
-  public async scope(
+  public scope(
     context: OscarContext<"/i10e/:scope">,
-  ): Promise<void> {
+  ): void {
     const { params } = context;
     const { scope } = params as {
       scope?: string;
     };
 
-    const listOrgPackagesRes = await graphQLClient.request<
-      ListOrgPackagesQueryResponse
-    >(
-      listOrgPackagesQuery,
-      {
-        orgSlug: scope,
-      },
-    );
-
-    if (!listOrgPackagesRes.org) {
-      context.response.status = 200;
-      context.response.type = "application/json";
-      context.response.body = {
-        items: [],
-        isIncomplete: true,
-      };
-      return;
-    }
+    const items = this.packagesFromScope(scope!);
 
     const body = {
-      items: listOrgPackagesRes.org?.packageConnection.nodes.map((n) => n.slug),
-      isIncomplete: listOrgPackagesRes.org?.packageConnection.pageInfo.hasNextPage,
+      items,
+      isIncomplete: false,
     };
+
     context.response.body = body;
     context.response.status = 200;
     context.response.type = "application/json";
-    return;
   }
 
-  public async scopePackage(
+  public scopePackage(
     context: OscarContext<"/i10e/:scope/{:package}?">,
-  ): Promise<void> {
+  ): void {
     const { scope, package: pkg } = context.params;
     logger.info({ scope, pkg });
-    const listOrgPackagesRes = await graphQLClient.request<
-      ListOrgPackagesQueryResponse
-    >(
-      listOrgPackagesQuery,
-      {
-        orgSlug: scope,
-      },
-    );
+
+    const pkgs = packages.filter((p) => p.scope === scope).map((p) => p.name);
 
     const fuse = new Fuse(
-      listOrgPackagesRes.org!.packageConnection.nodes.map((n) => n.slug),
+      pkgs,
       { includeScore: true, distance: 10 },
     );
 
@@ -150,39 +125,14 @@ export class IntellisenseController extends Controller<"/"> {
       "Content-Type",
       "application/json",
     );
-    return;
   }
 
-  public async scopePackageVer(
+  public scopePackageVer(
     context: OscarContext<"/i10e/:scope/:package/{:ver}?">,
-  ): Promise<void> {
-    const { scope, package: pkg, ver } = context.params;
-    logger.debug({ scope, pkg, ver });
-    // fetchVersions
-    const { org } = await graphQLClient.request<
-      GetPackageQueryResponse
-    >(
-      getPackageQuery,
-      {
-        orgSlug: scope,
-        packageSlug: pkg,
-      },
-    );
-
-    const versions = org!.package!.packageVersionConnection.nodes
-      .map((n) => n.semver)
-      .filter((semver) => valid(semver) !== null);
-    logger.debug(versions);
-    const items = (ver ? versions.filter((v) => satisfies(v, ver)) : versions).map((x) =>
-      major(x) >= 1 ? `^${x}` : `~${x}`
-    );
-    logger.debug(items);
-
-    const latest = maxSatisfying(versions, "*");
+  ): void {
     context.response.body = {
-      items,
+      items: ["latest"],
       isIncomplete: false,
-      preselect: latest,
     };
     context.response.status = 200;
     context.response.type = "application/json";
@@ -192,27 +142,21 @@ export class IntellisenseController extends Controller<"/"> {
   public async scopePackageVerPath(
     context: OscarContext<"/i10e/:scope/:package/:ver/:path*{/}?">,
   ): Promise<void> {
-    console.log("foo bar");
-    const { scope, package: pkg, ver } = context.params;
+    const { scope, package: pkg } = context.params;
     // fetchVersions
-    const { org } = await graphQLClient.request<
-      GetPackageQueryResponse
-    >(
-      getPackageQuery,
-      {
-        orgSlug: scope,
-        packageSlug: pkg,
-      },
-    );
-    const versions = org!.package!.packageVersionConnection.nodes
-      .map((n) => n.semver);
+    const found = packages.find((p) => p.scope === scope && p.name === pkg);
+    if (!found) {
+      context.response.status = 404;
+      return;
+    }
 
-    const version = maxSatisfying(versions, ver ?? "*");
-    logger.debug({ version });
-
-    const items = org!.package!.packageVersionConnection.nodes.find((n) => n.semver === version)?.moduleConnection
-      .nodes!.map((n) => n.filename.replace("/", ""));
-    logger.debug(items);
+    const hike = walk(found.path, {
+      exts: [".ts", ".js", ".d.ts"],
+    });
+    const items: string[] = [];
+    for await (const file of hike) {
+      items.push(file.path.replace(found.path, ""));
+    }
 
     context.response.status = 200;
     context.response.type = "application/json";

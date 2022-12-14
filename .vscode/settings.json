@@ -3,11 +3,13 @@
   "deno.enable": true,
   "deno.lint": true,
   "deno.unstable": true,
+  "deno.unsafelyIgnoreCertificateErrors": ["tfl.dev"],
   "deno.suggest.imports.hosts": {
     "https://deno.land": true,
     "https://tfl.dev": true,
     "https://npm.tfl.dev": true,
-    "https://fyko.ngrok.io": true
+    "https://fyko.ngrok.io": true,
+    "http://172.0.0.1:2318": true
   },
   "deno.config": "./deno.json",
   "[typescript]": {

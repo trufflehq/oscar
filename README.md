@@ -1,24 +1,16 @@
-<div align="center">
-  <p>
-    <a href="https://github.com/trufflehq/oscar"><img src="./public/oscar.svg" width="546" alt="oscar logo" /></a>
-  </p>
-</div>
+# Oscar@local
+This version of Oscar serves your local files, instead of from our Google Cloud bucket. Version numbers will be ignored.
 
-## About
+## Confguration
+> **Warning** Dont skip this section!  
 
-Oscar is Truffle's proprietary JavaScript and TypeScript package server. It connects with existing Truffle Developer
-Platform architecture to:
+Because we all have different fs formats, you'll have to manually define all the packages and their paths.
+Luckily, all the packages from `truffle-packages` are defined, you'll just have to update the path to your `truffle-packages` folder.
 
-- Serve TypeScript files in [Deno](https://deno.land)
-- Serve compiled JavaScript in [Node v18](https://nodejs.org/api/esm.html#https-and-http-imports)
-- Serve compiled JavaScript in the browser (see: [`trufflehq/mogul-menu`](https://github.com/trufflehq/mogul-menu))
+## Usage
+1. Start Oscar with `deno task dev`
+2. Start the local Nginx server with `docker compose up` (append a `-d` to detach if you wish).
+3. Add the line `127.0.0.1	tfl.dev` to your `/etc/hosts` file (don't forget to comment it out when you're done)!
+4. Add `"deno.unsafelyIgnoreCertificateErrors": ["tfl.dev"],` to your `.vscode/settings.json` and append `--unsafely-ignore-certificate-errors=tfl.dev` to `deno` cli commands where applicable.  
 
-## Roadmap
-
-- [x] Serve Typescript in Deno environment
-- [x] Serve compiled JavaScript in Node@18/Browser
-- [x] Bundling (`?bundle`)
-- [x] Fancy Deno Intellisense
-- [ ] Version Tagging (`@truffle/ui@latest`)
-- [ ] Complex Versions (`{version}-{branch}.{commit}-{timestamp}`, eg: `0.36.2-next.d503c71.1657211525`)
-- [ ] [Import Maps](https://github.com/WICG/import-maps#the-basic-idea)
+And you're good to go!
