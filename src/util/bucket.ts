@@ -1,3 +1,4 @@
+import { ensureDir } from "$std/fs/ensure_dir.ts";
 import packages from "../../packages.ts";
 import { CACHE_DIR } from "./constants.ts";
 
@@ -22,9 +23,13 @@ export const craftFileURL = (
   return `${resolved.path}/${path}`;
 };
 
-export function uploadFile(scope: string, pkg: string, path: string, content: string) {
+export async function uploadFile(scope: string, pkg: string, path: string, content: string) {
+  const fullPath = `${CACHE_DIR}/${encodeURIComponent(scope)}/${encodeURIComponent(pkg)}/${path}`;
+  const dir = fullPath.split("/").slice(0, -1).join("/");
+  await ensureDir(dir);
+
   return Deno.writeFile(
-    `${CACHE_DIR}/${encodeURIComponent(scope)}/${encodeURIComponent(pkg)}/${path}`,
+    fullPath,
     new TextEncoder().encode(content),
   );
 }
