@@ -72,9 +72,8 @@ jobs:
       - uses: whoan/docker-build-with-cache-action@v5
         with:
           username: _json_key
-          password: '${{ secrets.GCR_JSON_KEY }}'
+          password: "${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}"
           registry: gcr.io
-          dockerfile: ./Dockerfile
           image_name: oscar
           image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
 
