@@ -93,7 +93,6 @@ export class RootController extends Controller<"/"> {
         // if desired, we can target single files like:
         // "@microsoft/fast-element(.*)context\\.js",
 
-        "@truffle/distribute", // TODO: move useStylesheet context into @truffle/shared-contexts
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
