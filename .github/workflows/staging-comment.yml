@@ -59,18 +59,20 @@ jobs:
 
       - name: Github Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.sha.outputs.result }}
 
       - name: Generate build ID
         id: build_id
         run: |
-          sha=${GITHUB_SHA::8}
+          sha=$(echo ${{ steps.sha.outputs.result }} | cut -c -8)
           ts=$(date +%s)
-          echo "::set-output name=BUILD_ID::staging-${sha}-${ts}"
+          echo "BUILD_ID=staging-${sha}-${ts}" >> $GITHUB_OUTPUT
 
       - uses: whoan/docker-build-with-cache-action@v5
         with:
           username: _json_key
-          password: "${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}"
+          password: '${{ secrets.GOOGLE_PRIVATE_KEY_JSON }}'
           registry: gcr.io
           image_name: oscar
           image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
