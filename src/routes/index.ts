@@ -78,6 +78,8 @@ export class RootController extends Controller<"/"> {
         "react",
         "react-dom",
         "rxjs",
+        "@microsoft/fast-element(.*)context\\.js",
+
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
         "@truffle/api", // for same urql react context
@@ -323,7 +325,11 @@ function getIsExternal(
   // TODO: may better method of detecting these?
   return Boolean(externals.find((external) => {
     return bases.find((base) => {
-      const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@)`);
+      console.log("external", path, external);
+
+      const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@|\\?)`);
+      console.log("regex", regex);
+
       return path.match(regex);
     }) != null; // bases = '' is falsey
   }));
