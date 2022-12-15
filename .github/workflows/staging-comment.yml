@@ -1,0 +1,119 @@
+name: Build Staging on /staging PR Comment
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  build-and-push-to-gcr:
+    name: Build Staging (/staging)
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request && github.event.comment.body == '/staging' }}
+    steps:
+      - name: React to Comment
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const {owner, repo} = context.issue;
+            github.rest.reactions.createForIssueComment({
+              owner,
+              repo,
+              comment_id: context.payload.comment.id,
+              content: "rocket",
+            });
+
+      - name: Get PR SHA
+        id: sha
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo, number } = context.issue;
+            const pr = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: number,
+            });
+            return pr.data.head.sha
+
+      - name: Status pending
+        id: statusCheck
+        uses: actions/github-script@v6
+        with:
+          result-encoding: string
+          script: |
+            const { owner, repo, number } = context.issue;
+            const check = await github.rest.checks.create({
+              owner,
+              repo,
+              name: "Staging Image Check",
+              head_sha: '${{ steps.sha.outputs.result }}',
+              status: "in_progress",
+              output: {
+                title: "Building Staging Image",
+                summary: `You can check the github action status [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+              }
+            });
+            return check.data.id;
+
+      - name: Github Checkout (with submodules)
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.sha.outputs.result }}
+
+      - name: Generate build ID
+        id: build_id
+        run: |
+          sha=$(echo ${{ steps.sha.outputs.result }} | cut -c -8)
+          ts=$(date +%s)
+          echo "BUILD_ID=staging-${sha}-${ts}" >> $GITHUB_OUTPUT
+
+      - uses: whoan/docker-build-with-cache-action@v5
+        with:
+          username: _json_key
+          password: '${{ secrets.GCR_JSON_KEY }}'
+          registry: gcr.io
+          dockerfile: ./Dockerfile
+          image_name: oscar
+          image_tag: latest,${{ steps.build_id.outputs.BUILD_ID }}
+
+      - name: Status success
+        if: ${{ success() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            github.rest.checks.update({
+              owner,
+              repo,
+              name: "Staging Image Check",
+              head_sha: '${{ steps.sha.outputs.result }}',
+              check_run_id: ${{ steps.statusCheck.outputs.result }},
+              status: "completed",
+              conclusion: "success",
+              output: {
+                title: "Staging Image Built",
+                summary: `**Built \`${{ steps.build_id.outputs.BUILD_ID }}\` staging image! ✅** You can check the github action status [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+              }
+            });
+
+      - name: Status failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo, number } = context.issue;
+            github.rest.checks.update({
+              owner,
+              repo,
+              name: "Staging Image Check",
+              head_sha: '${{ steps.sha.outputs.result }}',
+              check_run_id: ${{ steps.statusCheck.outputs.result }},
+              status: "completed",
+              conclusion: "failure",
+              output: {
+                title: "Staging Image Failed to Build",
+                summary: `**Failed to build \`${{ steps.build_id.outputs.BUILD_ID }}\` staging image! ✅** You can check the github action status [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+              }
+            });
