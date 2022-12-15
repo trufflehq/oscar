@@ -328,11 +328,7 @@ function getIsExternal(
   // TODO: may better method of detecting these?
   return Boolean(externals.find((external) => {
     return bases.find((base) => {
-      console.log("external", path, external);
-
       const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@|\\?)`);
-      console.log("regex", regex);
-
       return path.match(regex);
     }) != null; // bases = '' is falsey
   }));
