@@ -57,17 +57,15 @@ jobs:
             });
             return check.data.id;
 
-      - name: Github Checkout (with submodules)
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ steps.sha.outputs.result }}
+      - name: Github Checkout
+        uses: actions/checkout@v3
 
       - name: Generate build ID
         id: build_id
         run: |
-          sha=$(echo ${{ steps.sha.outputs.result }} | cut -c -8)
+          sha=${GITHUB_SHA::8}
           ts=$(date +%s)
-          echo "BUILD_ID=staging-${sha}-${ts}" >> $GITHUB_OUTPUT
+          echo "::set-output name=BUILD_ID::staging-${sha}-${ts}"
 
       - uses: whoan/docker-build-with-cache-action@v5
         with:
