@@ -78,6 +78,7 @@ export class RootController extends Controller<"/"> {
         "react",
         "react-dom",
         "rxjs",
+        // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
         "@microsoft/fast-foundation",
         "@truffle/global-context", // need single context
 
