@@ -79,11 +79,13 @@ export class RootController extends Controller<"/"> {
         "react-dom",
         "rxjs",
         "@microsoft/fast-foundation",
-        "@microsoft/fast-element(.*)context\\.js",
-
         "@truffle/global-context", // need single context
-        "@truffle/distribute", // for useStylesheet to work (same react context)
-        "@truffle/api", // for same urql react context
+
+        // if desired, we can target single files like:
+        // "@microsoft/fast-element(.*)context\\.js",
+
+        "@truffle/distribute", // TODO: move context into @truffle/shared-contexts
+        "@truffle/api", // TODO: urql/core and unbundle just urql core
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
