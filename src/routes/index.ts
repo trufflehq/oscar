@@ -78,6 +78,7 @@ export class RootController extends Controller<"/"> {
         "react",
         "react-dom",
         "rxjs",
+        "@microsoft/fast-foundation",
         "@microsoft/fast-element(.*)context\\.js",
 
         "@truffle/global-context", // need single context
