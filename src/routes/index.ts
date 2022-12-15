@@ -80,6 +80,7 @@ export class RootController extends Controller<"/"> {
         "rxjs",
         "@truffle/global-context", // need single context
         "@truffle/distribute", // for useStylesheet to work (same react context)
+        "@truffle/api", // for same urql react context
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
