@@ -77,7 +77,13 @@ export class RootController extends Controller<"/"> {
       external: [
         "react",
         "react-dom",
-        "rxjs", // TODO: rm
+
+        // need single global context, whether bundled or not
+        "@truffle/global-context",
+
+        // any type of react context / stateful js we want in the shared-contexts package
+        // that way it's as few files as possible we unbundle
+        "@truffle/shared-contexts",
 
         // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
         "@microsoft/fast-foundation",
@@ -87,13 +93,12 @@ export class RootController extends Controller<"/"> {
         // but there seems to be statefulness elsewhere too
         "@urql/core",
 
-        // need single global context, whether bundled or not
-        "@truffle/global-context",
-
-        // if desired, we can target single files like:
+        // if desired, we can target single files.
+        // this will only work for npm.tfl.dev since it has absolute urls for everything.
+        // not for tfl.dev since we still use relative urls as of 12/2022
         // "@microsoft/fast-element(.*)context\\.js",
-        "@truffle/distribute(.*)wc-container-context\\.ts",
 
+        "rxjs", // TODO: rm
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
         "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
