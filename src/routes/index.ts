@@ -75,9 +75,15 @@ export class RootController extends Controller<"/"> {
       bundle: true,
       jsx: "transform",
       external: [
+        // NOTE: if we're bundling entire page at module level (page.tsx?bundle)
+        // we don't even have to worry much about bundled vs unbundled deps.
+        // since basically everything should be bundled. the only things not bundled
+        // will be imports from sporocarp/truffle-dev-server layer, or dynamic imports.
+        // if dyanmic imports become a problem, packages we potentially need to exclude from bundle:
+        // fast-foundation, rxjs, @urql/core
+
         "react",
         "react-dom",
-        // "@legendapp/state", // mostly keeping out so we don't have to load multiple times for different bundles
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
@@ -85,21 +91,10 @@ export class RootController extends Controller<"/"> {
         // any type of react context / stateful js we want in the shared-contexts package
         // that way it's as few files as possible we unbundle
         "@truffle/shared-contexts",
-        // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
-        // "@microsoft/fast-foundation",
-        // urql has some sort of context, not sure if it's all contained in a single file
-        // @truffle/api/urql-mods is their react hooks modified to use our framework-agnostic context
-        // but there seems to be statefulness elsewhere too.
-        // TODO: figure out where the statefulness is
-        // "@urql/core",
-
         // if desired, we can target single files.
         // this will only work for npm.tfl.dev since it has absolute urls for everything.
         // not for tfl.dev since we still use relative urls as of 12/2022
         // "@microsoft/fast-element(.*)context\\.js",
-
-        // "rxjs", // TODO: rm
-        // "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
