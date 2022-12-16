@@ -88,12 +88,12 @@ export class RootController extends Controller<"/"> {
 
         // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
         "@microsoft/fast-foundation",
-
         // urql has some sort of context, not sure if it's all contained in a single file
         // @truffle/api/urql-mods is their react hooks modified to use our framework-agnostic context
         // but there seems to be statefulness elsewhere too.
         // TODO: figure out where the statefulness is
-        "@urql/core",
+        // "@urql/core",
+
         // if desired, we can target single files.
         // this will only work for npm.tfl.dev since it has absolute urls for everything.
         // not for tfl.dev since we still use relative urls as of 12/2022
