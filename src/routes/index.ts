@@ -79,7 +79,9 @@ export class RootController extends Controller<"/"> {
         "react-dom",
         "rxjs",
         // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
-        "@microsoft/fast-foundation",
+        // "@microsoft/fast-foundation",
+        "@truffle/ui", // opera and edge: Cannot read properties of null (reading 'useRef')
+
         "@truffle/global-context", // need single context
 
         // if desired, we can target single files like:
