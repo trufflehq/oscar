@@ -77,7 +77,7 @@ export class RootController extends Controller<"/"> {
       external: [
         "react",
         "react-dom",
-        "@legendapp/state", // mostly keeping out so we don't have to load multiple times for different bundles
+        // "@legendapp/state", // mostly keeping out so we don't have to load multiple times for different bundles
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
