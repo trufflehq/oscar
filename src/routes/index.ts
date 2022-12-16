@@ -94,14 +94,13 @@ export class RootController extends Controller<"/"> {
         // but there seems to be statefulness elsewhere too.
         // TODO: figure out where the statefulness is
         "@urql/core",
-
         // if desired, we can target single files.
         // this will only work for npm.tfl.dev since it has absolute urls for everything.
         // not for tfl.dev since we still use relative urls as of 12/2022
         // "@microsoft/fast-element(.*)context\\.js",
 
-        "rxjs", // TODO: rm
-        "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
+        // "rxjs", // TODO: rm
+        // "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
