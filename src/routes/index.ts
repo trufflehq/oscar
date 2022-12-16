@@ -77,6 +77,7 @@ export class RootController extends Controller<"/"> {
       external: [
         "react",
         "react-dom",
+        "@legendapp/state", // mostly keeping out so we don't have to load multiple times for different bundles
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
@@ -100,7 +101,6 @@ export class RootController extends Controller<"/"> {
 
         "rxjs", // TODO: rm
         "@truffle/utils", // TODO: remove this when mogul-menu stops using rxjs. causes rxjs error in opera
-        "@legendapp/state", // HACK: figure out why legend isn't tracking observables in activity banners w/ ?bundle
       ],
       stdin: {
         contents: await fetch(fileURL).then((r) => r.text()),
