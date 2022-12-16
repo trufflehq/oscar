@@ -83,7 +83,7 @@ export class RootController extends Controller<"/"> {
 
         // any type of react context / stateful js we want in the shared-contexts package
         // that way it's as few files as possible we unbundle
-        "@truffle/shared-contexts",
+        // "@truffle/shared-contexts",
 
         // elements don't show when bundled. thought it might be bc of @microsoft/fast-element context.js, but unbundling just that file didn't work
         "@microsoft/fast-foundation",
