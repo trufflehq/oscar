@@ -336,8 +336,6 @@ function getIsExternal(
   return Boolean(externals.find((external) => {
     return bases.find((base) => {
       const regex = new RegExp(`${base.replace(".", "\\.")}/(v[0-9]+/)?${external}($|/|@|\\?)`);
-      console.log("matching...", path, regex);
-
       return path.match(regex);
     }) != null; // bases = '' is falsey
   }));
