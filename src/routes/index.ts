@@ -85,13 +85,8 @@ export class RootController extends Controller<"/"> {
         "react",
         "react-dom",
 
-        // FIXME: api still has something funky/stateful. if bundled,
-        // setting the accessToken doesn't update all gql reqs (authState)
-        // authState should be on client which is pulled from global-context, but
-        // something about that pattern is funky
-        // unbundling just @urql/core doesn't seem to work either
-        "@urql/core",
-        "@urql/exchange-auth",
+        // stateful config that gets set by sporocarp
+        "@truffle/config",
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
