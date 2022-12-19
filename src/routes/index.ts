@@ -90,7 +90,7 @@ export class RootController extends Controller<"/"> {
         // authState should be on client which is pulled from global-context, but
         // something about that pattern is funky
         // unbundling just @urql/core doesn't seem to work either
-        // "@truffle/api",
+        "@urql/core",
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
