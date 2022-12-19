@@ -85,6 +85,8 @@ export class RootController extends Controller<"/"> {
         "react",
         "react-dom",
 
+        "@urql/core",
+
         // need single global context, whether bundled or not
         "@truffle/global-context",
 
