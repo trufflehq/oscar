@@ -91,6 +91,7 @@ export class RootController extends Controller<"/"> {
         // something about that pattern is funky
         // unbundling just @urql/core doesn't seem to work either
         "@urql/core",
+        "@urql/exchange-auth",
 
         // need single global context, whether bundled or not
         "@truffle/global-context",
