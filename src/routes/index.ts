@@ -109,6 +109,10 @@ export class RootController extends Controller<"/"> {
       plugins: [{
         name: "oscar",
         setup: (build) => {
+          // TODO: i *think* esbuild is considering urls that redirect to the same url as 2 distinct imports (and bundling both)
+          // eg https://tfl.dev/@truffle/mogul-menu@~1.0.28/components/menu/menu.tsx
+          // vs https://tfl.dev/@truffle/mogul-menu@~1.0.29/components/menu/menu.tsx
+          // we want only 1 in bundle instead of both
           build.onResolve({ filter: /^https?:\/\// }, (args) => {
             const isExternal = getIsExternal({
               externals: build.initialOptions.external || [],
